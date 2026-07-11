@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+<meta name="theme-color" content="#0a1420"/>
+<title>2026 Futures Game — Scouting Cards</title>
+<style>
+:root{
+  --bg:#0a1420; --bg2:#0f1c2e; --ink:#eaf2fb; --dim:#8ba3bd; --line:#20344b;
+  --nl:#3b82f6; --nl2:#1e40af; --al:#ef4444; --al2:#991b1b;
+  --gold:#f5c542; --card:#12203260;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0; padding:0; height:100%; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  overscroll-behavior:none;}
+body{background:radial-gradient(1200px 600px at 50% -10%, #16283f 0%, #0a1420 60%);}
+
+/* Header */
+.hdr{position:fixed; top:0; left:0; right:0; z-index:30; padding:calc(env(safe-area-inset-top) + 8px) 14px 8px;
+  background:linear-gradient(#0a1420ee,#0a142000); display:flex; align-items:center; gap:10px;}
+.hdr h1{font-size:14px; margin:0; letter-spacing:.3px; font-weight:800; line-height:1.1;}
+.hdr .sub{font-size:10.5px; color:var(--dim); margin-top:1px;}
+.hdr .menu{margin-left:auto; background:#1b2c42; border:1px solid var(--line); color:var(--ink);
+  font-size:12px; font-weight:700; padding:8px 12px; border-radius:10px;}
+.counter{position:fixed; z-index:30; left:50%; transform:translateX(-50%);
+  bottom:calc(env(safe-area-inset-bottom) + 10px); background:#0f1c2ecc; border:1px solid var(--line);
+  padding:6px 14px; border-radius:20px; font-size:12px; font-weight:700; color:var(--dim); backdrop-filter:blur(6px);}
+.counter b{color:var(--ink);}
+
+/* Swipe track */
+.track{position:fixed; inset:0; display:flex; overflow-x:auto; overflow-y:hidden;
+  scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scrollbar-width:none;}
+.track::-webkit-scrollbar{display:none;}
+.card{min-width:100vw; width:100vw; height:100dvh; scroll-snap-align:center; scroll-snap-stop:always;
+  display:flex; align-items:center; justify-content:center; padding:64px 16px 54px;}
+.cardinner{width:100%; max-width:430px; max-height:100%; overflow-y:auto; scrollbar-width:none;
+  background:linear-gradient(180deg,#13223660,#0d18286b); border:1px solid var(--line);
+  border-radius:22px; padding:16px 16px 18px; box-shadow:0 18px 50px #00000066;}
+.cardinner::-webkit-scrollbar{display:none;}
+.card.nl .cardinner{border-top:3px solid var(--nl); box-shadow:0 18px 50px #00000066, 0 0 60px #1e40af22;}
+.card.al .cardinner{border-top:3px solid var(--al); box-shadow:0 18px 50px #00000066, 0 0 60px #99111b22;}
+
+.toprow{display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;}
+.teambadge{font-size:11px; font-weight:900; letter-spacing:1px; padding:4px 10px; border-radius:8px;}
+.nl .teambadge{background:var(--nl2); color:#dbeafe;}
+.al .teambadge{background:var(--al2); color:#fee2e2;}
+.rank{font-size:11px; font-weight:800; color:var(--gold); background:#3a2f0e; padding:4px 10px; border-radius:8px;}
+
+.photowrap{display:flex; justify-content:center; margin:6px 0 4px;}
+.photoring{width:150px; height:150px; border-radius:50%; padding:4px;
+  background:conic-gradient(from 200deg,#274863,#3b82f6,#274863); position:relative;}
+.al .photoring{background:conic-gradient(from 200deg,#5a2a2a,#ef4444,#5a2a2a);}
+.photo{width:100%; height:100%; border-radius:50%; object-fit:cover; background-color:#0c1826; display:block;}
+.fallback{position:absolute; inset:4px; border-radius:50%; background:#16273c; color:#6f89a6; font-size:46px; font-weight:800; display:flex; align-items:center; justify-content:center;}
+
+.name{text-align:center; font-size:25px; font-weight:900; margin-top:6px; letter-spacing:.2px;}
+.posline{text-align:center; margin-top:2px; display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;}
+.pos{font-size:12px; font-weight:900; padding:2px 9px; border-radius:6px; background:#1d3049; color:#bcd4ee;}
+.bio{font-size:12px; color:var(--dim);}
+
+.statgrid{display:flex; gap:6px; margin:14px 0 6px; justify-content:space-between;}
+.stat{flex:1; background:#0e1b2b; border:1px solid var(--line); border-radius:10px; padding:8px 2px; text-align:center;}
+.sv{font-size:17px; font-weight:900; color:#fff; line-height:1;}
+.sl{font-size:9.5px; color:var(--dim); font-weight:700; margin-top:3px; letter-spacing:.5px;}
+.statnote{text-align:center; font-size:10.5px; color:var(--dim); margin-bottom:10px; line-height:1.45;}
+.statnote .recent{color:#bcd4ee; font-weight:700;}
+.statnote .src{font-size:9.5px; color:#5f7690;}
+
+.blurb{font-size:13.5px; line-height:1.5; color:#dbe7f4; margin:6px 2px 12px;}
+.watch{font-size:12.5px; line-height:1.45; color:#e8f0d0; background:#17240f; border:1px solid #2f4417;
+  border-radius:12px; padding:9px 11px; margin-bottom:14px;}
+.watch .wl{display:block; font-size:10.5px; font-weight:800; color:#a3c257; letter-spacing:.5px; margin-bottom:2px;}
+
+.grade{display:flex; align-items:center; gap:12px; margin:2px 2px 10px;}
+.gl{font-size:12px; font-weight:800; color:var(--dim);}
+.stars{display:flex; gap:4px; font-size:30px; line-height:1;}
+.star{color:#33455c; cursor:pointer; transition:transform .08s;}
+.star.on{color:var(--gold); text-shadow:0 0 12px #f5c54255;}
+.star:active{transform:scale(1.25);}
+
+.note{width:100%; min-height:44px; resize:vertical; background:#0e1b2b; border:1px solid var(--line);
+  border-radius:12px; color:var(--ink); font-size:13px; padding:10px 12px; font-family:inherit;}
+.note::placeholder{color:#557095;}
+.note:focus{outline:none; border-color:#3b82f6;}
+
+/* Index overlay */
+.ovl{position:fixed; inset:0; z-index:50; background:#070f19f2; backdrop-filter:blur(4px);
+  display:none; flex-direction:column; padding:calc(env(safe-area-inset-top) + 14px) 0 0;}
+.ovl.open{display:flex;}
+.ovlhd{display:flex; align-items:center; padding:0 16px 12px; gap:10px;}
+.ovlhd h2{font-size:16px; margin:0; font-weight:900;}
+.ovlhd .close{margin-left:auto; background:#1b2c42; border:1px solid var(--line); color:var(--ink);
+  font-size:13px; font-weight:800; padding:8px 14px; border-radius:10px;}
+.ovlhd .sum{background:#3a2f0e; color:var(--gold); border:1px solid #5a4a12; font-size:12px;
+  font-weight:800; padding:8px 12px; border-radius:10px;}
+.ixlist{overflow-y:auto; padding:0 12px calc(env(safe-area-inset-bottom) + 20px);}
+.ixhead{font-size:11px; font-weight:900; letter-spacing:1px; padding:12px 6px 6px; color:#fff;}
+.ixhead.nl{color:#7ab0ff;} .ixhead.al{color:#ff9a9a;}
+.ixrow{display:flex; align-items:center; gap:10px; padding:11px 8px; border-bottom:1px solid #162538;}
+.ixpos{font-size:10px; font-weight:900; width:42px; text-align:center; padding:3px 0; border-radius:6px; background:#1d3049; color:#bcd4ee;}
+.ixpos.al{background:#2e1a1a; color:#ffc4c4;} .ixpos.nl{background:#16233f; color:#bcd4ee;}
+.ixname{font-size:14px; font-weight:600; flex:1;}
+.ixstars{font-size:13px; color:var(--gold); font-weight:800; min-width:54px; text-align:right; letter-spacing:1px;}
+
+/* Summary */
+.sumbody{overflow-y:auto; padding:4px 16px calc(env(safe-area-inset-bottom) + 20px);}
+.sumrow{display:flex; align-items:center; gap:10px; padding:9px 2px; border-bottom:1px solid #162538; font-size:14px;}
+.sumrow .sn{flex:1;} .sumrow .ss{color:var(--gold); font-weight:800; letter-spacing:1px;}
+.sumrow .snote{display:block; font-size:11.5px; color:var(--dim); margin-top:2px;}
+.sumempty{color:var(--dim); font-size:13px; padding:20px 4px; text-align:center;}
+
+.hint{position:fixed; z-index:29; right:14px; bottom:calc(env(safe-area-inset-bottom) + 44px);
+  font-size:10px; color:#4d6684;}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div>
+    <h1>2026 Futures Game · Scouting Cards</h1>
+    <div class="sub">Citizens Bank Park · Sun, Jul 12 · 12:00 ET · swipe to flip →</div>
+  </div>
+  <button class="menu" id="menuBtn">☰ Players</button>
+</div>
+
+<div class="track" id="track">
+  
+    <section class="card nl" data-idx="0" data-id="815908" data-name="Jesús Made">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">NL</span>
+          <span class="rank">No. 1 overall</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Jesús Made" data-step="0" data-mid="815908"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/815908/headshot/milb/current"/>
+            <div class="fallback" style="display:none">JM</div>
+          </div>
+        </div>
+        <div class="name">Jesús Made</div>
+        <div class="posline"><span class="pos">SS</span><span class="bio">Age 19 · Bats S / R · Brewers</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">.287</div><div class="sl">AVG</div></div><div class="stat"><div class="sv">.808</div><div class="sl">OPS</div></div><div class="stat"><div class="sv">3</div><div class="sl">HR</div></div><div class="stat"><div class="sv">18</div><div class="sl">RBI</div></div><div class="stat"><div class="sv">17</div><div class="sl">R</div></div><div class="stat"><div class="sv">6</div><div class="sl">SB</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: .174, 2 HR, 6 RBI</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">The best prospect in all of baseball. A switch-hitter who&#x27;s been the youngest player at Double-A all year and still rakes — lightning-quick hands, barrels everything, with the pop and speed to be a true five-tool shortstop.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> In BP, watch how easy and compact his swing is from both sides — line drives gap to gap.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="815908">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="815908" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card nl" data-idx="1" data-id="800543" data-name="Josue De Paula">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">NL</span>
+          <span class="rank">No. 4 overall</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Josue De Paula" data-step="0" data-mid="800543"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/800543/headshot/milb/current"/>
+            <div class="fallback" style="display:none">JD</div>
+          </div>
+        </div>
+        <div class="name">Josue De Paula</div>
+        <div class="posline"><span class="pos">OF</span><span class="bio">Age 21 · Bats L / L · Dodgers</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">.327</div><div class="sl">AVG</div></div><div class="stat"><div class="sv">.965</div><div class="sl">OPS</div></div><div class="stat"><div class="sv">5</div><div class="sl">HR</div></div><div class="stat"><div class="sv">12</div><div class="sl">RBI</div></div><div class="stat"><div class="sv">25</div><div class="sl">R</div></div><div class="stat"><div class="sv">9</div><div class="sl">SB</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: .280, 0 HR, 1 RBI</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">A tall, smooth left-handed outfielder with a gorgeous swing and elite plate discipline. He&#x27;s chasing history — he&#x27;d be the first player ever to win Futures Game MVP twice.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> That lefty stroke in BP is the show. Scorching hot lately (.965 OPS).</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="800543">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="800543" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card nl" data-idx="2" data-id="816113" data-name="Eli Willits">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">NL</span>
+          <span class="rank">No. 3 overall</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Eli Willits" data-step="0" data-mid="816113"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/816113/headshot/milb/current"/>
+            <div class="fallback" style="display:none">EW</div>
+          </div>
+        </div>
+        <div class="name">Eli Willits</div>
+        <div class="posline"><span class="pos">SS</span><span class="bio">Age 18 · Bats S / R · Nationals</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">.244</div><div class="sl">AVG</div></div><div class="stat"><div class="sv">.915</div><div class="sl">OPS</div></div><div class="stat"><div class="sv">6</div><div class="sl">HR</div></div><div class="stat"><div class="sv">15</div><div class="sl">RBI</div></div><div class="stat"><div class="sv">23</div><div class="sl">R</div></div><div class="stat"><div class="sv">9</div><div class="sl">SB</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: .250, 0 HR, 2 RBI</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">Last summer&#x27;s No. 1 overall draft pick and the youngest position player in the game. A polished switch-hitter with an elite eye who&#x27;s suddenly flashing power — 6 homers in the last 30 days.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Hard to believe he&#x27;s 18. Watch how rarely he chases out of the zone.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="816113">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="816113" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card nl" data-idx="3" data-id="809707" data-name="Charlie Condon">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">NL</span>
+          <span class="rank">Top-65 overall</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Charlie Condon" data-step="0" data-mid="809707"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/809707/headshot/milb/current"/>
+            <div class="fallback" style="display:none">CC</div>
+          </div>
+        </div>
+        <div class="name">Charlie Condon</div>
+        <div class="posline"><span class="pos">1B/OF</span><span class="bio">Age 23 · Bats R / R · Rockies</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">.372</div><div class="sl">AVG</div></div><div class="stat"><div class="sv">1.353</div><div class="sl">OPS</div></div><div class="stat"><div class="sv">10</div><div class="sl">HR</div></div><div class="stat"><div class="sv">29</div><div class="sl">RBI</div></div><div class="stat"><div class="sv">28</div><div class="sl">R</div></div><div class="stat"><div class="sv">0</div><div class="sl">SB</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: .118, 0 HR, 1 RBI</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">The 2024 Golden Spikes winner (college&#x27;s best player) and a former top-3 pick with light-tower power. After a slow pro start he has ERUPTED — 10 homers and a 1.353 OPS in the last month.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> THE power bat to watch in BP. If anyone reaches the upper deck, it&#x27;s him.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="809707">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="809707" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card nl" data-idx="4" data-id="823787" data-name="Rainiel Rodriguez">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">NL</span>
+          <span class="rank">No. 12 overall</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Rainiel Rodriguez" data-step="0" data-mid="823787"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/823787/headshot/milb/current"/>
+            <div class="fallback" style="display:none">RR</div>
+          </div>
+        </div>
+        <div class="name">Rainiel Rodriguez</div>
+        <div class="posline"><span class="pos">C</span><span class="bio">Age 19 · Bats R / R · Cardinals</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">.330</div><div class="sl">AVG</div></div><div class="stat"><div class="sv">1.001</div><div class="sl">OPS</div></div><div class="stat"><div class="sv">6</div><div class="sl">HR</div></div><div class="stat"><div class="sv">17</div><div class="sl">RBI</div></div><div class="stat"><div class="sv">22</div><div class="sl">R</div></div><div class="stat"><div class="sv">4</div><div class="sl">SB</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: .150, 0 HR, 2 RBI</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">A young catcher with a big, advanced bat who&#x27;s been mashing — a 1.001 OPS over the last month. Rare offensive upside from behind the plate.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Power from a teenage catcher is special. Watch the bat speed in BP.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="823787">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="823787" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card nl" data-idx="5" data-id="702607" data-name="Dakota Jordan">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">NL</span>
+          <span class="rank">Giants Top-5</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Dakota Jordan" data-step="0" data-mid="702607"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/702607/headshot/milb/current"/>
+            <div class="fallback" style="display:none">DJ</div>
+          </div>
+        </div>
+        <div class="name">Dakota Jordan</div>
+        <div class="posline"><span class="pos">OF</span><span class="bio">Age 23 · Bats R / R · Giants</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">.293</div><div class="sl">AVG</div></div><div class="stat"><div class="sv">.939</div><div class="sl">OPS</div></div><div class="stat"><div class="sv">7</div><div class="sl">HR</div></div><div class="stat"><div class="sv">21</div><div class="sl">RBI</div></div><div class="stat"><div class="sv">17</div><div class="sl">R</div></div><div class="stat"><div class="sv">6</div><div class="sl">SB</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: .357, 2 HR, 6 RBI</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">Nicknamed &#x27;Baby Bo&#x27; (as in Bo Jackson) for his rare mix of monster raw power and real speed out of Mississippi State. A physical, exciting athlete — 7 HR and 6 steals just last month.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> A must-watch in BP. The ball jumps off his bat like few others here.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="702607">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="702607" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card nl" data-idx="6" data-id="806956" data-name="Ethan Salas">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">NL</span>
+          <span class="rank">Top-35 overall</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Ethan Salas" data-step="0" data-mid="806956"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/806956/headshot/milb/current"/>
+            <div class="fallback" style="display:none">ES</div>
+          </div>
+        </div>
+        <div class="name">Ethan Salas</div>
+        <div class="posline"><span class="pos">C</span><span class="bio">Age 20 · Bats R / R · Padres</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">.238</div><div class="sl">AVG</div></div><div class="stat"><div class="sv">.591</div><div class="sl">OPS</div></div><div class="stat"><div class="sv">0</div><div class="sl">HR</div></div><div class="stat"><div class="sv">4</div><div class="sl">RBI</div></div><div class="stat"><div class="sv">5</div><div class="sl">R</div></div><div class="stat"><div class="sv">1</div><div class="sl">SB</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: .222, 0 HR, 1 RBI</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">A premium defensive catcher who&#x27;s been famous since his teens for how advanced he is behind the plate. The bat is still developing, but the glove, arm and leadership are the real deal.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Watch him catch and throw — elite receiving and a cannon arm. Check his pop times.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="806956">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="806956" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card nl" data-idx="7" data-id="702264" data-name="Gavin Kilen">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">NL</span>
+          <span class="rank">Giants Top-4</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Gavin Kilen" data-step="0" data-mid="702264"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/702264/headshot/milb/current"/>
+            <div class="fallback" style="display:none">GK</div>
+          </div>
+        </div>
+        <div class="name">Gavin Kilen</div>
+        <div class="posline"><span class="pos">2B/SS</span><span class="bio">Age 22 · Bats L / R · Giants</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">.280</div><div class="sl">AVG</div></div><div class="stat"><div class="sv">.888</div><div class="sl">OPS</div></div><div class="stat"><div class="sv">4</div><div class="sl">HR</div></div><div class="stat"><div class="sv">20</div><div class="sl">RBI</div></div><div class="stat"><div class="sv">11</div><div class="sl">R</div></div><div class="stat"><div class="sv">0</div><div class="sl">SB</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: .167, 1 HR, 3 RBI</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">A pure hitter the Giants took in the first round — smooth left-handed swing, rarely strikes out, steady middle-infield bat that just keeps producing.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Watch the easy contact. Line-drive machine who sprays the whole field.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="702264">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="702264" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card nl" data-idx="8" data-id="701527" data-name="Mike Sirota">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">NL</span>
+          <span class="rank">No. 11 overall</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Mike Sirota" data-step="0" data-mid="701527"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/701527/headshot/milb/current"/>
+            <div class="fallback" style="display:none">MS</div>
+          </div>
+        </div>
+        <div class="name">Mike Sirota</div>
+        <div class="posline"><span class="pos">OF</span><span class="bio">Age 23 · Bats R / R · Dodgers</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">.289</div><div class="sl">AVG</div></div><div class="stat"><div class="sv">.970</div><div class="sl">OPS</div></div><div class="stat"><div class="sv">4</div><div class="sl">HR</div></div><div class="stat"><div class="sv">12</div><div class="sl">RBI</div></div><div class="stat"><div class="sv">21</div><div class="sl">R</div></div><div class="stat"><div class="sv">1</div><div class="sl">SB</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: .250, 1 HR, 2 RBI</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">A toolsy, patient center fielder with a strong all-around game — he hits, gets on base, and defends. A classic high-floor Dodgers development piece.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Well-rounded — watch the at-bats and the routes in center.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="701527">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="701527" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card nl" data-idx="9" data-id="821041" data-name="Roldy Brito">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">NL</span>
+          <span class="rank">Rockies system</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Roldy Brito" data-step="0" data-mid="821041"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/821041/headshot/milb/current"/>
+            <div class="fallback" style="display:none">RB</div>
+          </div>
+        </div>
+        <div class="name">Roldy Brito</div>
+        <div class="posline"><span class="pos">OF/2B</span><span class="bio">Age 19 · Rockies</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">.344</div><div class="sl">AVG</div></div><div class="stat"><div class="sv">.988</div><div class="sl">OPS</div></div><div class="stat"><div class="sv">2</div><div class="sl">HR</div></div><div class="stat"><div class="sv">16</div><div class="sl">RBI</div></div><div class="stat"><div class="sv">17</div><div class="sl">R</div></div><div class="stat"><div class="sv">9</div><div class="sl">SB</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: .522, 2 HR, 4 RBI</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">A twitchy, high-energy sparkplug who&#x27;s been red-hot (.344, .988 OPS last 30) with speed to burn — 9 steals in the last month. Fun player to watch.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Watch him on the bases. Constant motion, always a threat to run.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="821041">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="821041" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card nl" data-idx="10" data-id="821273" data-name="Edward Florentino">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">NL</span>
+          <span class="rank">No. 31 overall</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Edward Florentino" data-step="0" data-mid="821273"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/821273/headshot/milb/current"/>
+            <div class="fallback" style="display:none">EF</div>
+          </div>
+        </div>
+        <div class="name">Edward Florentino</div>
+        <div class="posline"><span class="pos">OF/1B</span><span class="bio">Age 19 · Bats L / L · Pirates</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">.238</div><div class="sl">AVG</div></div><div class="stat"><div class="sv">.859</div><div class="sl">OPS</div></div><div class="stat"><div class="sv">6</div><div class="sl">HR</div></div><div class="stat"><div class="sv">18</div><div class="sl">RBI</div></div><div class="stat"><div class="sv">23</div><div class="sl">R</div></div><div class="stat"><div class="sv">2</div><div class="sl">SB</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: .150, 3 HR, 6 RBI</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">A big left-handed power bat with serious raw pop — 6 homers in the last month. Young and physical; when he connects, it travels a long way.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Another BP power name. Watch the left-handed thump.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="821273">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="821273" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card nl" data-idx="11" data-id="815825" data-name="Seth Hernandez">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">NL</span>
+          <span class="rank">No. 6 overall</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Seth Hernandez" data-step="0" data-mid="815825"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/815825/headshot/milb/current"/>
+            <div class="fallback" style="display:none">SH</div>
+          </div>
+        </div>
+        <div class="name">Seth Hernandez</div>
+        <div class="posline"><span class="pos">RHP</span><span class="bio">Age 20 · Throws R / R · Pirates</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">3.26</div><div class="sl">ERA</div></div><div class="stat"><div class="sv">1.19</div><div class="sl">WHIP</div></div><div class="stat"><div class="sv">28</div><div class="sl">K</div></div><div class="stat"><div class="sv">19.1</div><div class="sl">IP</div></div><div class="stat"><div class="sv">2</div><div class="sl">W</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: 3.0 ERA, 4 K in 3.0 IP</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">The most electric young arm in the field. First pitcher in the minors to 100 K this season, drawing Paul Skenes comparisons for how fast he&#x27;s climbing. Upper-90s heat with a nasty changeup.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Check the radar gun — easy premium velocity. The arm to see if he pitches.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="815825">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="815825" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card nl" data-idx="12" data-id="807284" data-name="Cam Caminiti">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">NL</span>
+          <span class="rank">No. 45 overall</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Cam Caminiti" data-step="0" data-mid="807284"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/807284/headshot/milb/current"/>
+            <div class="fallback" style="display:none">CC</div>
+          </div>
+        </div>
+        <div class="name">Cam Caminiti</div>
+        <div class="posline"><span class="pos">LHP</span><span class="bio">Age 19 · Throws L / L · Braves</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">1.96</div><div class="sl">ERA</div></div><div class="stat"><div class="sv">1.0</div><div class="sl">WHIP</div></div><div class="stat"><div class="sv">24</div><div class="sl">K</div></div><div class="stat"><div class="sv">23.0</div><div class="sl">IP</div></div><div class="stat"><div class="sv">1</div><div class="sl">W</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: 0.0 ERA, 3 K in 6.0 IP</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">A projectable lefty with a big fastball and a famous baseball last name. Quietly excellent — a sub-2.00 ERA over his last month of work.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Smooth lefty with life on the fastball. Watch the swings and misses.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="807284">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="807284" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card nl" data-idx="13" data-id="824604" data-name="Liam Doyle">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">NL</span>
+          <span class="rank">No. 22 overall</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Liam Doyle" data-step="0" data-mid="824604"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/824604/headshot/milb/current"/>
+            <div class="fallback" style="display:none">LD</div>
+          </div>
+        </div>
+        <div class="name">Liam Doyle</div>
+        <div class="posline"><span class="pos">LHP</span><span class="bio">Age 22 · Throws L / L · Cardinals</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">5.29</div><div class="sl">ERA</div></div><div class="stat"><div class="sv">1.82</div><div class="sl">WHIP</div></div><div class="stat"><div class="sv">21</div><div class="sl">K</div></div><div class="stat"><div class="sv">17.0</div><div class="sl">IP</div></div><div class="stat"><div class="sv">0</div><div class="sl">W</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: 1.8 ERA, 4 K in 5.0 IP</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">A power lefty out of Tennessee with a big fastball and swing-and-miss stuff. A little wild lately — the strikeouts are there, the command is still coming.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Watch the velocity and the misses. High-strikeout arm still refining control.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="824604">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="824604" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card nl" data-idx="14" data-id="828137" data-name="Miguel Sime Jr.">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">NL</span>
+          <span class="rank">Nationals system</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Miguel Sime Jr." data-step="0" data-mid="828137"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/828137/headshot/milb/current"/>
+            <div class="fallback" style="display:none">MS</div>
+          </div>
+        </div>
+        <div class="name">Miguel Sime Jr.</div>
+        <div class="posline"><span class="pos">RHP</span><span class="bio">Age 19 · Throws R / R · Nationals</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">2.87</div><div class="sl">ERA</div></div><div class="stat"><div class="sv">1.6</div><div class="sl">WHIP</div></div><div class="stat"><div class="sv">27</div><div class="sl">K</div></div><div class="stat"><div class="sv">15.2</div><div class="sl">IP</div></div><div class="stat"><div class="sv">0</div><div class="sl">W</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: 9.0 ERA, 3 K in 2.0 IP</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">A high-octane young arm with huge velocity and swing-and-miss stuff — 27 strikeouts in his last 15+ innings. Raw but genuinely electric.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Big-time gun readings. Watch how hard he throws for his age.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="828137">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="828137" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card al" data-idx="15" data-id="815888" data-name="Leo De Vries">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">AL</span>
+          <span class="rank">No. 2 overall</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Leo De Vries" data-step="0" data-mid="815888"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/815888/headshot/milb/current"/>
+            <div class="fallback" style="display:none">LD</div>
+          </div>
+        </div>
+        <div class="name">Leo De Vries</div>
+        <div class="posline"><span class="pos">SS</span><span class="bio">Age 19 · Bats S / R · Athletics</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">.271</div><div class="sl">AVG</div></div><div class="stat"><div class="sv">.865</div><div class="sl">OPS</div></div><div class="stat"><div class="sv">5</div><div class="sl">HR</div></div><div class="stat"><div class="sv">13</div><div class="sl">RBI</div></div><div class="stat"><div class="sv">15</div><div class="sl">R</div></div><div class="stat"><div class="sv">11</div><div class="sl">SB</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: .269, 1 HR, 3 RBI</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">A switch-hitting shortstop with star written all over him — the centerpiece the A&#x27;s landed in the Mason Miller trade. Power from both sides, patient, and a burner (11 steals last month).</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Watch him run — plus speed and he swipes bags. Big raw power for a middle infielder.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="815888">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="815888" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card al" data-idx="16" data-id="808265" data-name="Franklin Arias">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">AL</span>
+          <span class="rank">No. 7 overall</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Franklin Arias" data-step="0" data-mid="808265"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/808265/headshot/milb/current"/>
+            <div class="fallback" style="display:none">FA</div>
+          </div>
+        </div>
+        <div class="name">Franklin Arias</div>
+        <div class="posline"><span class="pos">SS</span><span class="bio">Age 20 · Bats R / R · Red Sox</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">.354</div><div class="sl">AVG</div></div><div class="stat"><div class="sv">1.091</div><div class="sl">OPS</div></div><div class="stat"><div class="sv">5</div><div class="sl">HR</div></div><div class="stat"><div class="sv">14</div><div class="sl">RBI</div></div><div class="stat"><div class="sv">14</div><div class="sl">R</div></div><div class="stat"><div class="sv">1</div><div class="sl">SB</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: .333, 1 HR, 4 RBI</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">A smooth, advanced-for-his-age shortstop in a loaded Red Sox system. He&#x27;s been one of the hottest hitters of anyone here — a 1.091 OPS over the last month with a great feel for the barrel.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Pure hitter. Watch how consistently he squares the ball up.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="808265">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="808265" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card al" data-idx="17" data-id="815394" data-name="Theo Gillen">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">AL</span>
+          <span class="rank">No. 9 overall</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Theo Gillen" data-step="0" data-mid="815394"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/815394/headshot/milb/current"/>
+            <div class="fallback" style="display:none">TG</div>
+          </div>
+        </div>
+        <div class="name">Theo Gillen</div>
+        <div class="posline"><span class="pos">OF</span><span class="bio">Age 20 · Bats L / R · Rays</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">.190</div><div class="sl">AVG</div></div><div class="stat"><div class="sv">.518</div><div class="sl">OPS</div></div><div class="stat"><div class="sv">0</div><div class="sl">HR</div></div><div class="stat"><div class="sv">11</div><div class="sl">RBI</div></div><div class="stat"><div class="sv">4</div><div class="sl">R</div></div><div class="stat"><div class="sv">4</div><div class="sl">SB</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: .227, 0 HR, 4 RBI</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">An athletic, hit-first outfielder in the Rays system — exactly the kind of high-feel bat they develop so well. He&#x27;s in a cold stretch, so this is a chance to see if he heats up on a big stage.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Bat-to-ball and athleticism are the calling cards. A bounce-back showcase.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="815394">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="815394" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card al" data-idx="18" data-id="806146" data-name="George Lombard Jr.">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">AL</span>
+          <span class="rank">No. 20 overall</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="George Lombard Jr." data-step="0" data-mid="806146"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/806146/headshot/milb/current"/>
+            <div class="fallback" style="display:none">GL</div>
+          </div>
+        </div>
+        <div class="name">George Lombard Jr.</div>
+        <div class="posline"><span class="pos">SS</span><span class="bio">Age 21 · Bats R / R · Yankees</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">.381</div><div class="sl">AVG</div></div><div class="stat"><div class="sv">1.432</div><div class="sl">OPS</div></div><div class="stat"><div class="sv">2</div><div class="sl">HR</div></div><div class="stat"><div class="sv">2</div><div class="sl">RBI</div></div><div class="stat"><div class="sv">6</div><div class="sl">R</div></div><div class="stat"><div class="sv">1</div><div class="sl">SB</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: —, — HR, — RBI</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">A toolsy, well-rounded shortstop and the son of a longtime big-leaguer, so the instincts run deep. Scorching hot in his most recent games — a 1.400+ OPS over the last month.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Smooth actions at short and a quick bat. Bloodlines you can see in how he plays.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="806146">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="806146" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card al" data-idx="19" data-id="828098" data-name="JoJo Parker">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">AL</span>
+          <span class="rank">No. 28 overall</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="JoJo Parker" data-step="0" data-mid="828098"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/828098/headshot/milb/current"/>
+            <div class="fallback" style="display:none">JP</div>
+          </div>
+        </div>
+        <div class="name">JoJo Parker</div>
+        <div class="posline"><span class="pos">SS</span><span class="bio">Age 19 · Bats R / R · Blue Jays</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">.268</div><div class="sl">AVG</div></div><div class="stat"><div class="sv">.957</div><div class="sl">OPS</div></div><div class="stat"><div class="sv">5</div><div class="sl">HR</div></div><div class="stat"><div class="sv">21</div><div class="sl">RBI</div></div><div class="stat"><div class="sv">20</div><div class="sl">R</div></div><div class="stat"><div class="sv">6</div><div class="sl">SB</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: .200, 0 HR, 4 RBI</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">A polished, well-rounded shortstop from the 2025 draft with a sweet swing and real production — a .957 OPS with 5 HR and 6 steals in the last month. Steady across the board.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Does a bit of everything. Watch the balanced, repeatable swing.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="828098">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="828098" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card al" data-idx="20" data-id="815352" data-name="Caleb Bonemer">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">AL</span>
+          <span class="rank">No. 16 overall</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Caleb Bonemer" data-step="0" data-mid="815352"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/815352/headshot/milb/current"/>
+            <div class="fallback" style="display:none">CB</div>
+          </div>
+        </div>
+        <div class="name">Caleb Bonemer</div>
+        <div class="posline"><span class="pos">3B/SS</span><span class="bio">Age 20 · Bats R / R · White Sox</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">.260</div><div class="sl">AVG</div></div><div class="stat"><div class="sv">.831</div><div class="sl">OPS</div></div><div class="stat"><div class="sv">4</div><div class="sl">HR</div></div><div class="stat"><div class="sv">12</div><div class="sl">RBI</div></div><div class="stat"><div class="sv">9</div><div class="sl">R</div></div><div class="stat"><div class="sv">3</div><div class="sl">SB</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: .250, 3 HR, 3 RBI</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">A strong, physical infielder with legit power that&#x27;s still being refined. When he squares it up it goes a long way; the tools are loud.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Watch the raw power in BP — big bat speed from the right side.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="815352">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="815352" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card al" data-idx="21" data-id="806252" data-name="Ralphy Velazquez">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">AL</span>
+          <span class="rank">No. 38 overall</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Ralphy Velazquez" data-step="0" data-mid="806252"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/806252/headshot/milb/current"/>
+            <div class="fallback" style="display:none">RV</div>
+          </div>
+        </div>
+        <div class="name">Ralphy Velazquez</div>
+        <div class="posline"><span class="pos">1B/OF</span><span class="bio">Age 21 · Bats L / R · Guardians</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">.287</div><div class="sl">AVG</div></div><div class="stat"><div class="sv">.795</div><div class="sl">OPS</div></div><div class="stat"><div class="sv">3</div><div class="sl">HR</div></div><div class="stat"><div class="sv">13</div><div class="sl">RBI</div></div><div class="stat"><div class="sv">13</div><div class="sl">R</div></div><div class="stat"><div class="sv">0</div><div class="sl">SB</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: .292, 2 HR, 5 RBI</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">A left-handed power bat with a smooth stroke and steady production — one of Cleveland&#x27;s most promising young sluggers.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Watch the easy lefty power. Balls carry when he barrels them.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="806252">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="806252" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card al" data-idx="22" data-id="805810" data-name="Blake Mitchell">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">AL</span>
+          <span class="rank">Royals Top-3</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Blake Mitchell" data-step="0" data-mid="805810"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/805810/headshot/milb/current"/>
+            <div class="fallback" style="display:none">BM</div>
+          </div>
+        </div>
+        <div class="name">Blake Mitchell</div>
+        <div class="posline"><span class="pos">C</span><span class="bio">Age 21 · Bats L / R · Royals</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">.261</div><div class="sl">AVG</div></div><div class="stat"><div class="sv">.904</div><div class="sl">OPS</div></div><div class="stat"><div class="sv">6</div><div class="sl">HR</div></div><div class="stat"><div class="sv">17</div><div class="sl">RBI</div></div><div class="stat"><div class="sv">19</div><div class="sl">R</div></div><div class="stat"><div class="sv">5</div><div class="sl">SB</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: .333, 3 HR, 7 RBI</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">A power-hitting catcher and the Royals&#x27; top position prospect — the rare backstop with real thump (6 HR, .900+ OPS last 30) who can also handle the defensive side.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Power from a catcher is special. Watch the pop in BP, then the footwork.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="805810">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="805810" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card al" data-idx="23" data-id="702610" data-name="Ike Irish">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">AL</span>
+          <span class="rank">Top-85 overall</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Ike Irish" data-step="0" data-mid="702610"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/702610/headshot/milb/current"/>
+            <div class="fallback" style="display:none">II</div>
+          </div>
+        </div>
+        <div class="name">Ike Irish</div>
+        <div class="posline"><span class="pos">OF/1B</span><span class="bio">Age 22 · Bats R / R · Orioles</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">.277</div><div class="sl">AVG</div></div><div class="stat"><div class="sv">.898</div><div class="sl">OPS</div></div><div class="stat"><div class="sv">4</div><div class="sl">HR</div></div><div class="stat"><div class="sv">15</div><div class="sl">RBI</div></div><div class="stat"><div class="sv">17</div><div class="sl">R</div></div><div class="stat"><div class="sv">7</div><div class="sl">SB</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: .176, 0 HR, 2 RBI</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">An advanced college bat who hits for average and pop with surprising speed (7 steals last month). Versatile enough to catch or play the outfield — he just hits.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Well-rounded offensive game. Watch the quality at-bats.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="702610">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="702610" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card al" data-idx="24" data-id="703185" data-name="Nelson Rada">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">AL</span>
+          <span class="rank">Angels Top-3</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Nelson Rada" data-step="0" data-mid="703185"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/703185/headshot/milb/current"/>
+            <div class="fallback" style="display:none">NR</div>
+          </div>
+        </div>
+        <div class="name">Nelson Rada</div>
+        <div class="posline"><span class="pos">OF</span><span class="bio">Age 20 · Bats L / L · Angels</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">.322</div><div class="sl">AVG</div></div><div class="stat"><div class="sv">.795</div><div class="sl">OPS</div></div><div class="stat"><div class="sv">0</div><div class="sl">HR</div></div><div class="stat"><div class="sv">8</div><div class="sl">RBI</div></div><div class="stat"><div class="sv">17</div><div class="sl">R</div></div><div class="stat"><div class="sv">8</div><div class="sl">SB</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: .250, 0 HR, 0 RBI</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">A fleet-footed, contact-oriented center fielder — .322 with 8 steals in the last month. A table-setter type with great instincts on the bases.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Watch him fly on the bases and cover ground in center.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="703185">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="703185" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card al" data-idx="25" data-id="807083" data-name="Nathan Flewelling">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">AL</span>
+          <span class="rank">No. 76 overall</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Nathan Flewelling" data-step="0" data-mid="807083"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/807083/headshot/milb/current"/>
+            <div class="fallback" style="display:none">NF</div>
+          </div>
+        </div>
+        <div class="name">Nathan Flewelling</div>
+        <div class="posline"><span class="pos">C</span><span class="bio">Age 19 · Bats L / R · Rays</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">.261</div><div class="sl">AVG</div></div><div class="stat"><div class="sv">.965</div><div class="sl">OPS</div></div><div class="stat"><div class="sv">6</div><div class="sl">HR</div></div><div class="stat"><div class="sv">14</div><div class="sl">RBI</div></div><div class="stat"><div class="sv">21</div><div class="sl">R</div></div><div class="stat"><div class="sv">3</div><div class="sl">SB</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: .250, 1 HR, 4 RBI</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">A young catcher breaking out with the bat — a .965 OPS and 6 homers over the last 30 days. Power and polish behind the plate.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Another bat-first catcher. Watch the left-handed pop.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="807083">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="807083" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card al" data-idx="26" data-id="807739" data-name="Kade Anderson">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">AL</span>
+          <span class="rank">No. 5 overall</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Kade Anderson" data-step="0" data-mid="807739"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/807739/headshot/milb/current"/>
+            <div class="fallback" style="display:none">KA</div>
+          </div>
+        </div>
+        <div class="name">Kade Anderson</div>
+        <div class="posline"><span class="pos">LHP</span><span class="bio">Age 22 · Throws L / L · Mariners</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">1.52</div><div class="sl">ERA</div></div><div class="stat"><div class="sv">0.68</div><div class="sl">WHIP</div></div><div class="stat"><div class="sv">32</div><div class="sl">K</div></div><div class="stat"><div class="sv">23.2</div><div class="sl">IP</div></div><div class="stat"><div class="sv">3</div><div class="sl">W</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: 3.0 ERA, 9 K in 6.0 IP</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">A polished lefty out of LSU, a top-3 pick last summer, who has done nothing but throw zeros at Double-A. Four-pitch mix, plus command — an arm that moves fast.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Not max-effort — watch how he changes speeds and locates. 32 K in his last 23 innings.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="807739">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="807739" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card al" data-idx="27" data-id="815549" data-name="Ryan Sloan">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">AL</span>
+          <span class="rank">No. 8 overall</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Ryan Sloan" data-step="0" data-mid="815549"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/815549/headshot/milb/current"/>
+            <div class="fallback" style="display:none">RS</div>
+          </div>
+        </div>
+        <div class="name">Ryan Sloan</div>
+        <div class="posline"><span class="pos">RHP</span><span class="bio">Age 20 · Throws R / R · Mariners</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">2.08</div><div class="sl">ERA</div></div><div class="stat"><div class="sv">0.88</div><div class="sl">WHIP</div></div><div class="stat"><div class="sv">26</div><div class="sl">K</div></div><div class="stat"><div class="sv">21.2</div><div class="sl">IP</div></div><div class="stat"><div class="sv">1</div><div class="sl">W</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: 3.38 ERA, 5 K in 5.1 IP</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">A big, physical right-hander with power stuff and projection to keep improving. Part of a stacked Mariners pipeline — dominant with a sub-1.00 WHIP over his last month.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Downhill plane and heavy stuff. Watch how uncomfortable hitters look.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="815549">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="815549" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card al" data-idx="28" data-id="701364" data-name="Jamie Arnold">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">AL</span>
+          <span class="rank">No. 26 overall</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Jamie Arnold" data-step="0" data-mid="701364"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/701364/headshot/milb/current"/>
+            <div class="fallback" style="display:none">JA</div>
+          </div>
+        </div>
+        <div class="name">Jamie Arnold</div>
+        <div class="posline"><span class="pos">LHP</span><span class="bio">Age 22 · Throws L / L · Athletics</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">3.38</div><div class="sl">ERA</div></div><div class="stat"><div class="sv">1.28</div><div class="sl">WHIP</div></div><div class="stat"><div class="sv">28</div><div class="sl">K</div></div><div class="stat"><div class="sv">26.2</div><div class="sl">IP</div></div><div class="stat"><div class="sv">2</div><div class="sl">W</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: 1.5 ERA, 4 K in 6.0 IP</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">A projectable college lefty with a deep pitch mix and steady strikeout numbers (28 K in his last 26+ innings). Advanced feel for pitching.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Crafty and durable. Watch the variety of pitches he&#x27;ll show.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="701364">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="701364" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+    <section class="card al" data-idx="29" data-id="804530" data-name="Joseph Dzierwa">
+      <div class="cardinner">
+        <div class="toprow">
+          <span class="teambadge">AL</span>
+          <span class="rank">Orioles system</span>
+        </div>
+        <div class="photowrap">
+          <div class="photoring">
+            <img class="photo" alt="Joseph Dzierwa" data-step="0" data-mid="804530"
+                 src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:milb:current.png/w_320,q_auto:best/v1/people/804530/headshot/milb/current"/>
+            <div class="fallback" style="display:none">JD</div>
+          </div>
+        </div>
+        <div class="name">Joseph Dzierwa</div>
+        <div class="posline"><span class="pos">LHP</span><span class="bio">Age 22 · Throws L / L · Orioles</span></div>
+        <div class="statgrid"><div class="stat"><div class="sv">2.28</div><div class="sl">ERA</div></div><div class="stat"><div class="sv">1.01</div><div class="sl">WHIP</div></div><div class="stat"><div class="sv">27</div><div class="sl">K</div></div><div class="stat"><div class="sv">23.2</div><div class="sl">IP</div></div><div class="stat"><div class="sv">1</div><div class="sl">W</div></div></div>
+        <div class="statnote">MiLB · last 30 days &nbsp;•&nbsp; <span class="recent">Last 7 days: 1.8 ERA, 3 K in 5.0 IP</span><br><span class="src">from your Watch101 data · updated Jul 10</span></div>
+        <div class="blurb">A tall lefty with excellent control and quietly great numbers — a 2.28 ERA and 27 strikeouts over his last month. Pounds the strike zone.</div>
+        <div class="watch"><span class="wl">👀 Watch for</span> Watch the command — he lives around the edges and works fast.</div>
+        <div class="grade">
+          <div class="gl">Your grade</div>
+          <div class="stars" data-id="804530">
+            <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+          </div>
+        </div>
+        <textarea class="note" data-id="804530" placeholder="Notes — what did you see? (tap to type)"></textarea>
+      </div>
+    </section>
+</div>
+
+<div class="counter"><b id="cur">1</b> / 30</div>
+<div class="hint">← swipe →</div>
+
+<!-- Index overlay -->
+<div class="ovl" id="ovl">
+  <div class="ovlhd">
+    <h2 id="ovlTitle">Players</h2>
+    <button class="sum" id="sumBtn">★ My grades</button>
+    <button class="close" id="closeBtn">Close</button>
+  </div>
+  <div class="ixlist" id="ixlist">
+    <div class="ixhead nl">National League</div><div class="ixrow" data-goto="0"><span class="ixpos nl">SS</span><span class="ixname">Jesús Made</span><span class="ixstars" data-id="815908"></span></div><div class="ixrow" data-goto="1"><span class="ixpos nl">OF</span><span class="ixname">Josue De Paula</span><span class="ixstars" data-id="800543"></span></div><div class="ixrow" data-goto="2"><span class="ixpos nl">SS</span><span class="ixname">Eli Willits</span><span class="ixstars" data-id="816113"></span></div><div class="ixrow" data-goto="3"><span class="ixpos nl">1B/OF</span><span class="ixname">Charlie Condon</span><span class="ixstars" data-id="809707"></span></div><div class="ixrow" data-goto="4"><span class="ixpos nl">C</span><span class="ixname">Rainiel Rodriguez</span><span class="ixstars" data-id="823787"></span></div><div class="ixrow" data-goto="5"><span class="ixpos nl">OF</span><span class="ixname">Dakota Jordan</span><span class="ixstars" data-id="702607"></span></div><div class="ixrow" data-goto="6"><span class="ixpos nl">C</span><span class="ixname">Ethan Salas</span><span class="ixstars" data-id="806956"></span></div><div class="ixrow" data-goto="7"><span class="ixpos nl">2B/SS</span><span class="ixname">Gavin Kilen</span><span class="ixstars" data-id="702264"></span></div><div class="ixrow" data-goto="8"><span class="ixpos nl">OF</span><span class="ixname">Mike Sirota</span><span class="ixstars" data-id="701527"></span></div><div class="ixrow" data-goto="9"><span class="ixpos nl">OF/2B</span><span class="ixname">Roldy Brito</span><span class="ixstars" data-id="821041"></span></div><div class="ixrow" data-goto="10"><span class="ixpos nl">OF/1B</span><span class="ixname">Edward Florentino</span><span class="ixstars" data-id="821273"></span></div><div class="ixrow" data-goto="11"><span class="ixpos nl">RHP</span><span class="ixname">Seth Hernandez</span><span class="ixstars" data-id="815825"></span></div><div class="ixrow" data-goto="12"><span class="ixpos nl">LHP</span><span class="ixname">Cam Caminiti</span><span class="ixstars" data-id="807284"></span></div><div class="ixrow" data-goto="13"><span class="ixpos nl">LHP</span><span class="ixname">Liam Doyle</span><span class="ixstars" data-id="824604"></span></div><div class="ixrow" data-goto="14"><span class="ixpos nl">RHP</span><span class="ixname">Miguel Sime Jr.</span><span class="ixstars" data-id="828137"></span></div><div class="ixhead al">American League</div><div class="ixrow" data-goto="15"><span class="ixpos al">SS</span><span class="ixname">Leo De Vries</span><span class="ixstars" data-id="815888"></span></div><div class="ixrow" data-goto="16"><span class="ixpos al">SS</span><span class="ixname">Franklin Arias</span><span class="ixstars" data-id="808265"></span></div><div class="ixrow" data-goto="17"><span class="ixpos al">OF</span><span class="ixname">Theo Gillen</span><span class="ixstars" data-id="815394"></span></div><div class="ixrow" data-goto="18"><span class="ixpos al">SS</span><span class="ixname">George Lombard Jr.</span><span class="ixstars" data-id="806146"></span></div><div class="ixrow" data-goto="19"><span class="ixpos al">SS</span><span class="ixname">JoJo Parker</span><span class="ixstars" data-id="828098"></span></div><div class="ixrow" data-goto="20"><span class="ixpos al">3B/SS</span><span class="ixname">Caleb Bonemer</span><span class="ixstars" data-id="815352"></span></div><div class="ixrow" data-goto="21"><span class="ixpos al">1B/OF</span><span class="ixname">Ralphy Velazquez</span><span class="ixstars" data-id="806252"></span></div><div class="ixrow" data-goto="22"><span class="ixpos al">C</span><span class="ixname">Blake Mitchell</span><span class="ixstars" data-id="805810"></span></div><div class="ixrow" data-goto="23"><span class="ixpos al">OF/1B</span><span class="ixname">Ike Irish</span><span class="ixstars" data-id="702610"></span></div><div class="ixrow" data-goto="24"><span class="ixpos al">OF</span><span class="ixname">Nelson Rada</span><span class="ixstars" data-id="703185"></span></div><div class="ixrow" data-goto="25"><span class="ixpos al">C</span><span class="ixname">Nathan Flewelling</span><span class="ixstars" data-id="807083"></span></div><div class="ixrow" data-goto="26"><span class="ixpos al">LHP</span><span class="ixname">Kade Anderson</span><span class="ixstars" data-id="807739"></span></div><div class="ixrow" data-goto="27"><span class="ixpos al">RHP</span><span class="ixname">Ryan Sloan</span><span class="ixstars" data-id="815549"></span></div><div class="ixrow" data-goto="28"><span class="ixpos al">LHP</span><span class="ixname">Jamie Arnold</span><span class="ixstars" data-id="701364"></span></div><div class="ixrow" data-goto="29"><span class="ixpos al">LHP</span><span class="ixname">Joseph Dzierwa</span><span class="ixstars" data-id="804530"></span></div>
+  </div>
+  <div class="sumbody" id="sumbody" style="display:none"></div>
+</div>
+
+<script>
+(function(){
+  var track=document.getElementById('track');
+  var cards=[].slice.call(document.querySelectorAll('.card'));
+  var cur=document.getElementById('cur');
+
+  // ---- persistence (safe: falls back to memory if blocked) ----
+  var mem={};
+  function load(){ try{ return JSON.parse(localStorage.getItem('futuresGrades2026')||'{}'); }catch(e){ return mem; } }
+  function save(o){ try{ localStorage.setItem('futuresGrades2026',JSON.stringify(o)); }catch(e){ mem=o; } }
+  var DB=load();
+  function getRec(id){ return DB[id]||(DB[id]={stars:0,note:''}); }
+
+  // ---- headshot fallback cascade ----
+  document.querySelectorAll('.photo').forEach(function(img){
+    img.addEventListener('error',function(){
+      var s=parseInt(img.getAttribute('data-step'),10), id=img.getAttribute('data-mid');
+      if(s===0){ img.setAttribute('data-step','1');
+        img.src='https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_320,q_auto:best/v1/people/'+id+'/headshot/67/current'; }
+      else { img.style.display='none'; var fb=img.parentNode.querySelector('.fallback'); if(fb) fb.style.display='flex'; }
+    });
+  });
+
+  // ---- stars render ----
+  function paintStars(container,n){
+    container.querySelectorAll('.star').forEach(function(st){
+      st.classList.toggle('on', parseInt(st.getAttribute('data-v'),10)<=n);
+    });
+  }
+  function starStr(n){ return n? '★'.repeat(n)+'☆'.repeat(5-n) : '—'; }
+
+  document.querySelectorAll('.stars').forEach(function(sc){
+    var id=sc.getAttribute('data-id');
+    paintStars(sc,getRec(id).stars);
+    sc.querySelectorAll('.star').forEach(function(st){
+      st.addEventListener('click',function(){
+        var v=parseInt(st.getAttribute('data-v'),10);
+        var rec=getRec(id);
+        rec.stars = (rec.stars===v)? 0 : v;   // tap same star again to clear
+        save(DB); paintStars(sc,rec.stars); syncIndexStars();
+      });
+    });
+  });
+
+  // ---- notes ----
+  document.querySelectorAll('.note').forEach(function(ta){
+    var id=ta.getAttribute('data-id');
+    ta.value=getRec(id).note||'';
+    ta.addEventListener('input',function(){ getRec(id).note=ta.value; save(DB); });
+  });
+
+  // ---- counter on scroll ----
+  var tick;
+  track.addEventListener('scroll',function(){
+    clearTimeout(tick);
+    tick=setTimeout(function(){
+      var i=Math.round(track.scrollLeft/window.innerWidth);
+      cur.textContent=(i+1);
+    },60);
+  });
+
+  // ---- index overlay ----
+  var ovl=document.getElementById('ovl');
+  var ixlist=document.getElementById('ixlist');
+  var sumbody=document.getElementById('sumbody');
+  document.getElementById('menuBtn').onclick=function(){ showIndex(); ovl.classList.add('open'); };
+  document.getElementById('closeBtn').onclick=function(){ ovl.classList.remove('open'); };
+  function showIndex(){ ixlist.style.display='block'; sumbody.style.display='none';
+    document.getElementById('ovlTitle').textContent='Players'; syncIndexStars(); }
+
+  document.querySelectorAll('.ixrow').forEach(function(r){
+    r.addEventListener('click',function(){
+      var g=parseInt(r.getAttribute('data-goto'),10);
+      track.scrollTo({left:g*window.innerWidth, behavior:'auto'});
+      cur.textContent=(g+1); ovl.classList.remove('open');
+    });
+  });
+  function syncIndexStars(){
+    document.querySelectorAll('.ixstars').forEach(function(s){
+      var id=s.getAttribute('data-id'); var n=(DB[id]&&DB[id].stars)||0;
+      s.textContent = n? '★'.repeat(n) : '';
+    });
+  }
+  syncIndexStars();
+
+  // ---- grades summary ----
+  document.getElementById('sumBtn').onclick=function(){
+    ixlist.style.display='none'; sumbody.style.display='block';
+    document.getElementById('ovlTitle').textContent='My grades';
+    var rows=cards.map(function(c){
+      var id=c.getAttribute('data-id'), name=c.getAttribute('data-name');
+      var rec=DB[id]||{stars:0,note:''};
+      return {name:name, stars:rec.stars||0, note:rec.note||''};
+    }).filter(function(x){return x.stars>0 || x.note;})
+      .sort(function(a,b){return b.stars-a.stars;});
+    if(!rows.length){ sumbody.innerHTML='<div class="sumempty">No grades yet — tap the stars on a card after you watch a guy, and they’ll show up here to screenshot.</div>'; return; }
+    sumbody.innerHTML=rows.map(function(x){
+      return '<div class="sumrow"><div class="sn">'+esc(x.name)+
+        (x.note?'<span class="snote">'+esc(x.note)+'</span>':'')+
+        '</div><div class="ss">'+starStr(x.stars)+'</div></div>';
+    }).join('');
+  };
+  function esc(s){var d=document.createElement('div'); d.textContent=s; return d.innerHTML;}
+
+  // keep counter correct on rotate/resize
+  window.addEventListener('resize',function(){
+    var i=Math.max(0,parseInt(cur.textContent,10)-1);
+    track.scrollLeft=i*window.innerWidth;
+  });
+})();
+</script>
+</body>
+</html>
