@@ -1,0 +1,1 @@
+Futures Game scouting cards.
