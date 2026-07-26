@@ -43,6 +43,19 @@ body{
 #clock .lbl{font-size:10px; font-weight:700; color:var(--dim); letter-spacing:1.4px}
 #clock .rd{font-size:13px; color:#cfd8e3; font-weight:700}
 #clock .who{font-size:18px; font-weight:800; color:var(--accent)}
+/* Pick timer. The board sends a deadline, not a number, so this can tick
+   smoothly between polls instead of jumping every few seconds. */
+#timer{
+  font-variant-numeric:tabular-nums; font-size:20px; font-weight:800; letter-spacing:.4px;
+  padding:1px 9px; border-radius:6px; border:2px solid #3a4450;
+  background:#10151b; color:#cfd8e3; white-space:nowrap; flex:0 0 auto;
+}
+#timer.warn{color:#ffd08a; border-color:#8a6a3d; background:#2a2216}
+#timer.red { color:#ff9b8a; border-color:#8a4a3d; background:#2e1a16}
+#timer.up  { color:#fff; background:#a3382a; border-color:#d1503c; font-size:17px;
+             animation:flash 1s steps(1) infinite}
+#timer.paused{color:#8b95a3}
+@keyframes flash{0%{opacity:1}50%{opacity:.45}100%{opacity:1}}
 #dot{
   font-size:10px; font-weight:800; letter-spacing:.4px; padding:5px 8px; border-radius:5px;
   border:1px solid var(--line); color:var(--dim); white-space:nowrap; flex:0 0 auto;
@@ -145,6 +158,7 @@ td.cell.xed::after{
     <span class="lbl">ON THE CLOCK</span>
     <span class="rd" id="cRd"></span>
     <span class="who" id="cWho">waiting…</span>
+    <span id="timer" style="display:none"></span>
   </div>
   <div class="legend">
     <span><i style="background:var(--qb)"></i>QB</span>
@@ -175,6 +189,32 @@ const STALE_MS = 90000;     // no fresh publish for this long = say so
 
 const $ = id => document.getElementById(id);
 let lastHash = '', lastGood = 0, prevCells = {}, firstPaint = true, timer = null;
+let tInfo = null;   // {ends:ISO} while running, or {paused:true,left:secs}
+
+/* Ticks locally off the deadline the board sent, so it counts down smoothly
+   rather than lurching once per poll. */
+function paintTimer(){
+  const el = $('timer');
+  if(!tInfo){ el.style.display = 'none'; return; }
+  el.style.display = '';
+  let ms;
+  if(tInfo.paused){
+    ms = (tInfo.left || 0) * 1000;
+    el.className = 'paused';
+    el.textContent = fmt(ms) + ' ❚❚';
+    return;
+  }
+  ms = Math.max(0, new Date(tInfo.ends).getTime() - Date.now());
+  if(ms <= 0){ el.className = 'up'; el.textContent = "TIME'S UP"; return; }
+  const s = Math.ceil(ms/1000);
+  el.className = s <= 10 ? 'red' : (s <= 30 ? 'warn' : '');
+  el.textContent = fmt(ms);
+}
+function fmt(ms){
+  const s = Math.ceil(ms/1000);
+  return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+}
+setInterval(paintTimer, 250);
 
 const isK = r => typeof r === 'string' && r[0] === 'K';
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g,
@@ -232,6 +272,8 @@ function ago(ms){
 
 function draw(st, published){
   $('msg').classList.add('hide');
+  tInfo = st.timer || null;
+  paintTimer();
 
   const NT = st.teams.length;
   const short = st.short || st.teams;
