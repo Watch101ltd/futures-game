@@ -66,6 +66,19 @@
   .row{display:flex;align-items:center;gap:calc(var(--s)*11px);
        padding:calc(var(--s)*6px) calc(var(--s)*9px);border-radius:5px}
   .row:nth-child(even){background:rgba(255,255,255,.028)}
+  /* ROSTER_PANEL_V1 */
+  .roster{display:grid;grid-template-columns:auto 1fr;gap:calc(var(--s)*3px) calc(var(--s)*9px);
+          align-items:baseline;font-size:calc(var(--s)*15px)}
+  .roster .slot{color:var(--dim);font-weight:700;font-size:calc(var(--s)*12px);
+                text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+  .roster .who{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .roster .who .t{color:var(--dim);font-weight:600;font-size:calc(var(--s)*12px);margin-left:6px}
+  /* An unfilled starting slot. Deliberately loud-ish: an empty starter is the
+     thing you most need to notice while the clock is running. */
+  .roster .who.hole{color:#8b96a3;font-weight:600}
+  .roster .bench{grid-column:1 / -1;margin-top:calc(var(--s)*6px);padding-top:calc(var(--s)*5px);
+                 border-top:1px solid var(--line);color:var(--dim);font-size:calc(var(--s)*13px)}
+  .roster .bench b{color:var(--ink);font-weight:700}
   .row.gone{opacity:.34}
   .row.gone .nm{text-decoration:line-through;text-decoration-thickness:2px}
   .row.mine{box-shadow:inset 3px 0 0 var(--me);background:rgba(61,138,89,.12)}
@@ -189,6 +202,11 @@
   </div>
 
   <div class="right">
+    <!-- ROSTER_PANEL_V1, his request 2026-08-24: "show them who they picked,
+         roster style". Sits ABOVE the holes chips because a name you can read
+         is more use mid-draft than a count. Both builds get it. -->
+    <h3>Your roster</h3>
+    <div id="roster" class="roster">Pick your team above.</div>
     <h3>Your holes</h3>
     <div id="mine" class="runs">Pick your team above.</div>
     <h3>What every team has taken</h3>
@@ -632,6 +650,51 @@ function render(){
       : (ahead < 0 ? 'no picks left' : '<b>' + ahead + '</b> pick' + (ahead===1?'':'s') + ' until you are up');
   }
 
+  /* ROSTER_PANEL_V1 — the lineup card.
+     Starters are filled in DRAFT ORDER within each position, then the first
+     spare RB/WR/TE drops into FLEX, then everything else is bench. That mirrors
+     how the league actually reads a roster; it is not trying to be an optimiser.
+     🪨 Keepers sort FIRST because their row keys start with K, which is also the
+     real draft order -- keepers are on the board before round 1. */
+  (function(){
+    const mine = (C[meIdx].picks || []).slice().sort((a,b) => {
+      const ak = String(a.row), bk = String(b.row);
+      const aK = ak[0] === 'K', bK = bk[0] === 'K';
+      if (aK !== bK) return aK ? -1 : 1;
+      return (parseInt(ak.replace(/\D/g,''),10)||0) - (parseInt(bk.replace(/\D/g,''),10)||0);
+    });
+    const pool = {}; POSES.forEach(ps => pool[ps] = []);
+    for (const pk of mine) if (pool[pk.pos]) pool[pk.pos].push(pk.p);
+
+    const rows = [];
+    const line = (slot, pl) => rows.push(
+      '<div class="slot">' + slot + '</div>'
+      + (pl ? '<div class="who">' + esc(pl.n) + '<span class="t">' + esc(pl.tm || '') + '</span></div>'
+            : '<div class="who hole">&mdash;</div>'));
+
+    const left = {}; POSES.forEach(ps => left[ps] = pool[ps].slice());
+    /* 🪨 SLOT ORDER IS QB, RB, WR, TE, FLEX, DST -- the order a lineup card reads,
+       NOT the order POSES happens to be declared in. Iterating POSES straight
+       through put FLEX after DST, which is not how anybody lays out a roster. */
+    for (const ps of ['QB','RB','WR','TE']){
+      for (let i = 0; i < NEED[ps]; i++){
+        line(NEED[ps] > 1 ? ps + (i+1) : ps, left[ps].shift() || null);
+      }
+    }
+    for (let i = 0; i < FLEX; i++){
+      let f = null;
+      for (const ps of ['RB','WR','TE']) if (!f && left[ps].length) f = left[ps].shift();
+      line('FLEX', f);
+    }
+    for (let i = 0; i < NEED.DST; i++) line('DST', left.DST.shift() || null);
+    const bench = [];
+    for (const ps of POSES) for (const pl of left[ps]) bench.push(pl);
+    rows.push('<div class="bench">Bench <b>' + bench.length + '</b>'
+      + (bench.length ? ' &middot; ' + bench.map(b => esc(b.n)).join(', ') : '') + '</div>');
+
+    $('roster').innerHTML = rows.join('');
+  })();
+
   // your holes
   const mc = C[meIdx], mh = holes(mc);
   $('mine').innerHTML =
@@ -913,11 +976,19 @@ $('src').innerHTML = BERRY && BERRY.players
     + 'round or more higher on him than the room, orange means the room is higher than Berry. '
     + 'Kickers are removed, your league has none. Past his ' + BERRY.count
     + ' the order falls back to CBS ownership and gets soft.'
-  : (ADP && ADP.players
-      ? 'No Berry file found, so this is half-PPR consensus ADP order, top ' + ADP.count + '. '
-        + 'Drop berry_2026.json into the data folder and rebuild.'
-      : 'No rankings file found at all, so this is CBS ownership order, which saturates '
-        + 'at the top. Drop berry_2026.json into the data folder and rebuild.');
+  /* 🪨 THE SHARED BUILD MUST NOT PRINT BUILD INSTRUCTIONS. He caught this on the
+     live GitHub page 2026-08-24: it was telling the league "No Berry file found...
+     Drop berry_2026.json into the data folder and rebuild", which announces that a
+     rankings file exists that they are not getting AND leaks an internal filename.
+     His copy still gets the full diagnostic, because on HIS copy it is a real
+     warning that something failed to bake. */
+  : (SHARED
+      ? 'Ordered by half-PPR average draft position. Struck through means already gone.'
+      : (ADP && ADP.players
+          ? 'No Berry file found, so this is half-PPR consensus ADP order, top ' + ADP.count + '. '
+            + 'Drop berry_2026.json into the data folder and rebuild.'
+          : 'No rankings file found at all, so this is CBS ownership order, which saturates '
+            + 'at the top. Drop berry_2026.json into the data folder and rebuild.'));
 
 // If the board opened us, tell it we are ready so it pushes immediately.
 try{ if(window.opener) window.opener.postMessage({__nohomersReady:true}, '*'); }catch(e){}
