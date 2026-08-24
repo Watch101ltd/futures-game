@@ -211,10 +211,14 @@
     <div id="mine" class="runs">Pick your team above.</div>
     <h3>What every team has taken</h3>
     <table id="grid"><thead><tr>
-      <th style="text-align:left">Team</th><th>QB</th><th>RB</th><th>WR</th><th>TE</th><th>DST</th><th>Still needs</th>
+      <th style="text-align:left">Team</th><th>QB</th><th>RB</th><th>WR</th><th>TE</th><th>DST</th>
+      <th id="needhead">Still needs</th>
     </tr></thead><tbody></tbody></table>
-    <h3>Position runs, last 10 picks</h3>
-    <div id="runs" class="runs">Nothing yet.</div>
+    <!-- id so the shared build can drop the whole block, heading included -->
+    <div id="runsblock">
+      <h3>Position runs, last 10 picks</h3>
+      <div id="runs" class="runs">Nothing yet.</div>
+    </div>
   </div>
 </div>
 
@@ -257,6 +261,21 @@ const ROOKIES = new Set((ROOKIEDOC && ROOKIEDOC.ids) ? ROOKIEDOC.ids.map(String)
    project already learned that lesson with the public/private board builds. */
 const MODE = /*__MODE__*/ 'shared' /*__MODEEND__*/;
 const SHARED = (MODE === 'shared');
+
+/* SHARED_STRIP_V1: two whole blocks come off the league's copy, his call 2026-08-24.
+     #needhead + its cells  the STILL NEEDS column, a scouting report on all nine
+                            other managers
+     #runsblock             "Position runs, last 10 picks", which flags a run in
+                            progress so you can jump it. Straight analysis.
+   🪨 These are DOM removals rather than CSS hiding, because hidden-but-present
+   markup still ships the data to anyone who opens the page source. The cells are
+   never generated either (see the grid builder), so nothing is merely covered up. */
+if (SHARED) {
+  document.addEventListener('DOMContentLoaded', function(){
+    const nh = document.getElementById('needhead');   if (nh && nh.remove) nh.remove();
+    const rb = document.getElementById('runsblock');  if (rb && rb.remove) rb.remove();
+  });
+}
 const LIVE_URL = 'https://nfl-nas.fantasywatch101.com';
 
 const LSKEY = 'nohomers-draft-2026';
@@ -710,26 +729,41 @@ function render(){
     const cls = (i === meIdx ? 'me ' : '') + (cur && cur.t === i ? 'onclock' : '');
     return '<tr class="'+cls+'"><td class="team">'+esc(shortOf(n))+'</td>'
       + POSES.map(ps => '<td class="'+(c[ps]===0?'cnt0':'')+'">'+c[ps]+'</td>').join('')
-      + '<td>' + (h.length
+      /* SHARED_STRIP_V1 (extended 2026-08-24, his call). The STILL NEEDS column is
+         a scouting report on all nine other managers -- it tells a guest that Trash
+         Boat needs three WRs and lets him plan around it. That is further than any
+         of the other steering went, because it is about OTHER people's rosters, not
+         the viewer's own. Counts per position stay; the interpretation does not. */
+      + (SHARED ? '' : '<td>' + (h.length
           ? h.map(x => '<span class="need" style="background:var(--'+x[0].toLowerCase()+')">'+x[1]+' '+x[0]+'</span>').join('')
-          : '<span class="full">set</span>') + '</td></tr>';
+          : '<span class="full">set</span>') + '</td>') + '</tr>';
   }).join('');
 
-  // runs
-  const all = [];
-  for(const k in S.cells){
-    const c = S.cells[k]; if(!c || !c.pid || isK(k.split('-')[0])) continue;
-    const p = BY_ID.get(String(c.pid)); if(p) all.push(norm(p.pos));
-  }
-  const last = all.slice(-10);
-  if(!last.length) $('runs').textContent = 'Nothing yet.';
-  else {
-    const tally = {};
-    last.forEach(x => tally[x] = (tally[x]||0) + 1);
-    $('runs').innerHTML = POSES.filter(ps => tally[ps])
-      .sort((a,b) => tally[b]-tally[a])
-      .map(ps => '<b>' + tally[ps] + '</b> ' + ps).join(' &middot; ')
-      + '<br><span style="font-size:12px">out of the last ' + last.length + ' picks</span>';
+  /* runs
+     🪨 ORPHANED-REFERENCE GUARD (Constitution rule #9). #runsblock is REMOVED from
+     the DOM on a shared build, so `$('runs')` returns null there and the two writes
+     below would throw a TypeError -- which, because this sits inside render(), would
+     kill paintList() on the very next line and leave the league staring at an empty
+     page. Caught by grepping for the id after the removal, not by running it.
+     Skipping the whole computation is better than null-guarding each write: there is
+     no point tallying runs for an element that does not exist. */
+  const runsEl = SHARED ? null : $('runs');
+  if (runsEl) {
+    const all = [];
+    for(const k in S.cells){
+      const c = S.cells[k]; if(!c || !c.pid || isK(k.split('-')[0])) continue;
+      const p = BY_ID.get(String(c.pid)); if(p) all.push(norm(p.pos));
+    }
+    const last = all.slice(-10);
+    if(!last.length) runsEl.textContent = 'Nothing yet.';
+    else {
+      const tally = {};
+      last.forEach(x => tally[x] = (tally[x]||0) + 1);
+      runsEl.innerHTML = POSES.filter(ps => tally[ps])
+        .sort((a,b) => tally[b]-tally[a])
+        .map(ps => '<b>' + tally[ps] + '</b> ' + ps).join(' &middot; ')
+        + '<br><span style="font-size:12px">out of the last ' + last.length + ' picks</span>';
+    }
   }
 
   paintList(C);
@@ -855,10 +889,20 @@ function paintList(C){
   // The tight end line. This league pays TEs double on receptions and only ten
   // start, so how many are left is the one scarcity number worth a banner.
   const teLeft = alive.TE || 0;
+  /* SHARED_STRIP_V1 (extended 2026-08-24, his call): the COUNTS stay on both
+     builds -- how many of each position are left is public information anybody
+     can work out. What comes off the league's copy is the STEERING:
+       .need    a gold outline on the positions THIS viewer still has to fill
+       .tewarn  "TE premium, only 10 start, you still need one"
+     His words: "they don't need any help knowing what they need, they should be
+     able to figure that out on themselves."
+     🪨 Neither ever leaked anything of his -- both read the VIEWER'S own roster.
+     They go for the same reason the row shading went: he is happy to hand the
+     league a tracker, not a coach. */
   $('scarce').innerHTML = POSES.map(ps =>
-      '<span class="sc' + (myHoles[ps] ? ' need' : '') + '">' + ps + ' <b>' + (alive[ps] || 0) + '</b></span>'
+      '<span class="sc' + (!SHARED && myHoles[ps] ? ' need' : '') + '">' + ps + ' <b>' + (alive[ps] || 0) + '</b></span>'
     ).join('')
-    + (myHoles.TE ? '<span class="tewarn">TE premium &middot; only 10 start &middot; you still need one</span>' : '');
+    + (!SHARED && myHoles.TE ? '<span class="tewarn">TE premium &middot; only 10 start &middot; you still need one</span>' : '');
 }
 
 /* ---------- the only two controls ---------- */
