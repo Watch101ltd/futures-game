@@ -726,8 +726,24 @@ function paintList(C){
       lastTierKey = key;
     }
     const shifted = custom.length && BASE_AT.get(String(p.id)) !== custom.indexOf(String(p.id));
-    out += '<div class="row' + (g ? ' gone' : '') + (g && g.t === meIdx ? ' mine' : '')
-         + (!g && myHoles[ps] ? ' want' : '') + (shifted ? ' moved' : '') + '"'
+    /* SHARED_STRIP_V1 (extended 2026-08-24): the three ROW SHADING classes are his
+       copy only. `gone` is NOT one of them and never will be -- the strikethrough on
+       drafted players is the entire point of the page for everybody.
+         mine  = green wash on players your own team took
+         want  = amber wash + peach name on positions your roster still needs
+         moved = gold rank on a player you dragged out of his default slot
+       🪨 NOTE THESE WERE NEVER A LEAK. Each one is computed in the VIEWER'S OWN
+       browser from the VIEWER'S OWN team and drag order, so on the shared copy they
+       would have shaded each guest's own roster holes, not his. They come off anyway,
+       and for his actual stated reason rather than the privacy one he first assumed:
+       "they should do their own homework." Telling somebody which positions he still
+       needs, in colour, is doing his homework for him.
+       The classes are simply not emitted in shared mode, so the CSS above stays
+       untouched and his own sheet looks exactly as it always has. */
+    out += '<div class="row' + (g ? ' gone' : '')
+         + (!SHARED && g && g.t === meIdx ? ' mine' : '')
+         + (!SHARED && !g && myHoles[ps] ? ' want' : '')
+         + (!SHARED && shifted ? ' moved' : '') + '"'
          + ' data-pid="' + esc(p.id) + '"'
          + (editing && !g ? ' draggable="true"' : '') + '>'
       + (editing ? '<span class="grip">&#8942;&#8942;</span>' : '')
