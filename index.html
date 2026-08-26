@@ -723,7 +723,26 @@ const ADP_BY_ID = new Map();
   }
   for(const a of ADP.players){
     if(a.pos === 'K') continue;
-    const p = byName.get(nm(a.n)) || (a.pos === 'DST' ? byTeamDst.get(a.tm) : null);
+    /* ADP_JOIN_BY_ID_V1 (2026-08-26, his call: "I want him to correctly show on the ADP
+       list"). BY ID FIRST, exactly as joinBerry below has always done.
+
+       🪨 THE BUG THIS CLOSES, and it is worth the comment: this join matched on NAME
+       ONLY, while `adp_2026.json` has carried the resolved pool id all along -- build_adp.py
+       works it out at build time and even records the pool spelling in `pool_n`. So the
+       right answer was already in the file and the page was throwing it away and guessing
+       from the name instead. KENNY GAINWELL was the casualty: the ADP feed calls him
+       Kenny, CBS calls him Kenneth, the normaliser strips punctuation and suffixes but has
+       no idea those are the same man. He landed nowhere, lost his ADP figure on the Dude's
+       sheet, and on the LEAGUE's copy -- where ADP IS the running order -- he fell from
+       about 104th to 163rd, sorted on ownership with the undrafted.
+
+       🪨 A NICKNAME IS NOT A SPELLING VARIANT. No amount of normalising gets Kenny to
+       Kenneth, so a name matcher could never have been tuned into correctness here. That
+       is the whole argument for joining on the id and keeping names as the fallback. This
+       fixes every other nickname in the feed at the same time, including ones nobody has
+       noticed yet, which a Gainwell alias would not have. */
+    let p = a.id ? BY_ID.get(String(a.id)) : null;
+    if(!p) p = byName.get(nm(a.n)) || (a.pos === 'DST' ? byTeamDst.get(a.tm) : null);
     if(p) ADP_BY_ID.set(String(p.id), a);
   }
 })();
