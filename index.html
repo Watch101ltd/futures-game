@@ -132,6 +132,15 @@
      for it looking at his own phone: "so you can always see the last pick that was made,
      and who made the pick, and what player they were." Sticky, because "always see it"
      means it cannot scroll away while he hunts through 260 players. */
+  /* TEAM_TAB_V1: hidden everywhere except a phone. On a laptop both panels are on
+     screen at once and a switcher would be a button that does nothing. */
+  .viewtabs{display:none}
+  .viewtabs button{flex:1 1 0;padding:calc(var(--s)*11px) calc(var(--s)*6px);
+    border:none;border-top:1px solid var(--line);background:var(--panel2);
+    color:var(--dim);font-family:inherit;font-size:calc(var(--s)*14px);font-weight:800;
+    letter-spacing:.4px;cursor:pointer}
+  .viewtabs button.on{background:var(--gold);color:#1a1005}
+
   .lastpick{display:none}
   .lastpick.on{
     display:block;padding:calc(var(--s)*8px) calc(var(--s)*11px);
@@ -313,6 +322,25 @@
 
     .upnow.on{font-size:calc(var(--s)*22px);padding:calc(var(--s)*11px) calc(var(--s)*8px)}
     .upnow .sub{font-size:calc(var(--s)*13px)}
+
+    /* ---- TEAM_TAB_V1: two screens instead of one endless one ----
+       His roster panel was never missing on the phone. PHONE_LAYOUT_V1 stacked it
+       UNDER the player list, and that list is about 21,000px tall, so reaching his own
+       team meant scrolling past 260 players. Present, and unreachable in practice.
+       🪨 THE SAME SHAPE AS THE SCROLL BUG: content that exists but cannot be got to is
+       content that does not exist. Stacking solved the width and quietly created a
+       distance problem.
+       So on a phone the two panels become two views and the tabs swap between them.
+       Nothing is hidden that was not already there, and nothing new is computed. */
+    .viewtabs{display:flex}
+    body.view-team .tabs,
+    body.view-team .scarce,
+    body.view-team .src,
+    body.view-team .list{display:none}
+    /* the roster panel is the side panel on a laptop and the second screen here */
+    .right{display:none}
+    body.view-team .right{display:block;border-top:none}
+    body.view-team .right h3{position:sticky;top:0;z-index:5}
   }
 </style>
 </head>
@@ -336,6 +364,13 @@
     <div class="stickytop" id="stickytop">
       <div class="upnow" id="upnow"></div>
       <div class="lastpick" id="lastpick"></div>
+      <!-- TEAM_TAB_V1 (2026-08-26, his request): PHONE ONLY, and it lives INSIDE the
+           sticky block on purpose. The clock banner and the last pick stay above it in
+           both views, so switching to his roster never costs him sight of the draft. -->
+      <div class="viewtabs" id="viewtabs">
+        <button type="button" data-view="players" class="on">Players</button>
+        <button type="button" data-view="team">My Team</button>
+      </div>
     </div>
     <div class="tabs" id="tabs"></div>
     <div class="tabs" style="border-bottom:2px solid var(--line)">
@@ -449,6 +484,13 @@ if (SHARED) {
     });
     const fi = document.getElementById('find');
     if (fi) fi.placeholder = 'search for a player\u2026';
+  });
+} else {
+  /* TEAM_TAB_V1: his own copy is a laptop copy and shows both panels side by side, so
+     the switcher would be two buttons that do nothing. Removed rather than hidden, to
+     match how every other build difference on this page is done. */
+  document.addEventListener('DOMContentLoaded', function(){
+    const vt = document.getElementById('viewtabs'); if (vt && vt.remove) vt.remove();
   });
 }
 const LIVE_URL = 'https://nfl-nas.fantasywatch101.com';
@@ -947,6 +989,22 @@ function sequence(){
   return seq;
 }
 
+/* TEAM_TAB_V1 (2026-08-26): which of the two phone screens he is looking at.
+   Body class only -- no re-render, no data, nothing to keep in step. Switching views
+   cannot lose an armed pick, because the arming lives in pendingPid and the send button
+   lives in the sticky block that both views share. */
+let view = 'players';
+function setView(v){
+  view = (v === 'team') ? 'team' : 'players';
+  document.body.classList.toggle('view-team', view === 'team');
+  const vt = $('viewtabs');
+  if(vt && vt.querySelectorAll){
+    [...vt.querySelectorAll('button')].forEach(b =>
+      b.classList.toggle('on', b.dataset.view === view));
+  }
+  if(S) paintUpNow(_mineNow, _curPick);   /* the banner's instruction changes with the view */
+}
+
 /* LAST_PICK_V1 (2026-08-26): the last pick made, who made it, and where the draft is.
    HIS COPY DOES NOT GET IT -- he is the one typing the picks in, so he already knows.
 
@@ -1017,7 +1075,11 @@ function paintUpNow(mineNow, cur){
            + '<br>waiting for him to enter it &middot; tap another player to change it</span>';
     } else {
       html = 'YOU ARE ON THE CLOCK'
-           + '<span class="sub">Round ' + cur.r + ' &middot; tap a player below to send him to Jay</span>';
+           + '<span class="sub">Round ' + cur.r + ' &middot; '
+           /* TEAM_TAB_V1: "tap a player below" is a lie while he is looking at his
+              roster, and it is a lie at the exact moment it matters most. */
+           + (view === 'team' ? 'tap Players to pick your man'
+                              : 'tap a player below to send him to Jay') + '</span>';
     }
   } else {
     html = 'YOU ARE ON THE CLOCK'
@@ -1442,6 +1504,16 @@ if($('reset')) $('reset').onclick = () => {
    SORTCOLS is wired up for free. */
 /* Rule #9 guard: #hrow is REMOVED from the shared build, so this must survive its
    absence. paintHeader() carries the same null check. */
+/* TEAM_TAB_V1: one listener for both tabs. */
+(function(){
+  const vt = $('viewtabs');
+  if(!vt) return;                       /* Rule #9: removed from the local build */
+  vt.addEventListener('click', e => {
+    const b = e.target.closest('[data-view]');
+    if(b) setView(b.dataset.view);
+  });
+})();
+
 (function(){
   const hb = $('hrow');
   if(!hb) return;
