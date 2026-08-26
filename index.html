@@ -126,7 +126,25 @@
      Everything it needs was ALREADY being worked out for the little text line in the
      top bar. Nothing new is computed; it is the same fact said loudly. */
   .upnow{display:none}
-  .upnow.on{position:sticky;top:0;z-index:25}
+  .stickytop{position:sticky;top:0;z-index:25}
+
+  /* LAST_PICK_V1: the running commentary for the man who is not in the room. He asked
+     for it looking at his own phone: "so you can always see the last pick that was made,
+     and who made the pick, and what player they were." Sticky, because "always see it"
+     means it cannot scroll away while he hunts through 260 players. */
+  .lastpick{display:none}
+  .lastpick.on{
+    display:block;padding:calc(var(--s)*8px) calc(var(--s)*11px);
+    background:var(--panel2);border-bottom:2px solid var(--line);
+    font-size:calc(var(--s)*14px);line-height:1.35;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lastpick .lbl{color:var(--dim);font-weight:800;font-size:calc(var(--s)*11px);
+                 letter-spacing:.7px;margin-right:calc(var(--s)*7px)}
+  .lastpick .slot{color:var(--gold);font-weight:800;margin-right:calc(var(--s)*7px)}
+  .lastpick .mgr{color:var(--ink);font-weight:700}
+  .lastpick .plr{color:var(--ink);font-weight:800}
+  .lastpick .det{color:var(--dim);font-weight:600}
+  .lastpick.none{color:var(--dim);font-weight:600}
   .upnow.on{
     display:block;text-align:center;
     padding:calc(var(--s)*14px) calc(var(--s)*10px);
@@ -311,14 +329,21 @@
   <div class="left">
     <!-- CLOCK_BANNER_V1: sits at the very top of the list column so it cannot be
          scrolled past. Empty and display:none until it is actually his turn. -->
-    <div class="upnow" id="upnow"></div>
+    <!-- LAST_PICK_V1 (2026-08-26, his request off the phone screenshot): both bars live
+         in ONE sticky block. Two separately-sticky bars both pinned to top:0 would sit on
+         top of each other, and the clock banner's height changes with its contents so a
+         fixed offset could not be right for long. -->
+    <div class="stickytop" id="stickytop">
+      <div class="upnow" id="upnow"></div>
+      <div class="lastpick" id="lastpick"></div>
+    </div>
     <div class="tabs" id="tabs"></div>
     <div class="tabs" style="border-bottom:2px solid var(--line)">
       <button id="edit" title="Turn dragging on so you can move players up and down. Your order is saved.">Reorder: off</button>
       <input id="find" placeholder="find a player to move…">
       <button id="reset" title="Throw away your changes and go back to Berry's order">Reset to default</button>
       <span id="orderState" style="color:var(--dim)"></span>
-      <span style="margin-left:auto;display:flex;gap:5px;align-items:center">
+      <span id="textsize" style="margin-left:auto;display:flex;gap:5px;align-items:center">
         <span style="color:var(--dim)">Text</span>
         <button id="fsDown" title="Smaller text">A&minus;</button>
         <button id="fsUp" title="Bigger text">A+</button>
@@ -411,6 +436,19 @@ if (SHARED) {
     /* SORT_HEADER_V1: the sort header goes too. It carries no data, only labels, so
        this is about not showing the league a control bar for numbers they do not get. */
     const hr = document.getElementById('hrow');        if (hr && hr.remove) hr.remove();
+    /* LAST_PICK_V1, his call 2026-08-26 off the phone screenshot: "get rid of that whole
+       bar." Reorder, Reset, the order note and the text-size buttons are all controls for
+       running HIS OWN copy and are dead weight on a phone during somebody else's draft.
+       🪨 THE SEARCH BOX STAYS. It was inside the same bar, and on a 260-man list on a
+       phone it is the fastest thing on the page -- the one control the absent manager
+       actually needs with the room waiting on him. Its placeholder said "find a player to
+       MOVE", which described the reordering that is now gone, so it is retitled to say
+       what it really does. */
+    ['edit','reset','orderState','textsize'].forEach(function(id){
+      const n = document.getElementById(id); if (n && n.remove) n.remove();
+    });
+    const fi = document.getElementById('find');
+    if (fi) fi.placeholder = 'search for a player\u2026';
   });
 }
 const LIVE_URL = 'https://nfl-nas.fantasywatch101.com';
@@ -909,6 +947,47 @@ function sequence(){
   return seq;
 }
 
+/* LAST_PICK_V1 (2026-08-26): the last pick made, who made it, and where the draft is.
+   HIS COPY DOES NOT GET IT -- he is the one typing the picks in, so he already knows.
+
+   🪨 WHERE "LAST" COMES FROM, because there is no timestamp on a pick. The published
+   board is a snapshot, not a feed: every filled cell looks identical whether it was
+   entered ten seconds ago or an hour ago. But sequence() already lays every slot out in
+   true draft order, and render() already finds the first UNFILLED one to work out who is
+   on the clock. So the last pick made is simply the slot immediately before that. No new
+   data, no clock, and it cannot drift out of step with the on-the-clock line because both
+   are read off the same index.
+
+   Keepers are deliberately not counted -- sequence() excludes them, so before the first
+   real pick this says the draft has not started rather than announcing a keeper as though
+   somebody had just taken him. */
+function paintLastPick(seq, nextIdx){
+  const el = $('lastpick');
+  if(!el) return;                    // Rule #9
+  if(!SHARED || !S){ el.className = 'lastpick'; el.innerHTML = ''; return; }
+  const i = (nextIdx < 0) ? seq.length - 1 : nextIdx - 1;
+  let html, cls = 'lastpick on';
+  if(i < 0){
+    cls = 'lastpick on none';
+    html = '<span class="lbl">LAST PICK</span>the draft has not started yet';
+  } else {
+    const slot = seq[i];
+    const c = S.cells[slot.r + '-' + slot.t];
+    const p = c && c.pid ? BY_ID.get(String(c.pid)) : null;
+    /* Seat within the round rather than a running count, so a traded or skipped pick
+       cannot shift the number that everybody in the room is calling out loud. */
+    const seat = order(slot.r).indexOf(slot.t) + 1;
+    html = '<span class="lbl">LAST PICK</span>'
+         + '<span class="slot">' + slot.r + '.' + (seat < 10 ? '0' : '') + seat + '</span>'
+         + '<span class="mgr">' + esc(shortOf(S.teams[slot.t])) + '</span>'
+         + '<span class="det"> took </span>'
+         + '<span class="plr">' + esc(p ? p.n : 'somebody') + '</span>'
+         + (p ? '<span class="det">  ' + norm(p.pos) + (p.tm ? ' ' + esc(p.tm) : '') + '</span>' : '');
+  }
+  if(el.innerHTML !== html) el.innerHTML = html;
+  if(el.className !== cls) el.className = cls;
+}
+
 /* CLOCK_BANNER_V1: the loud half of the clock, for the man who is not in the room.
    Guarded on SHARED and on the element existing, per Rule #9 -- render() runs on both
    builds and a missing element here would throw INSIDE render(), which would take the
@@ -979,6 +1058,7 @@ function render(){
   const cur = nextIdx < 0 ? null : seq[nextIdx];
 
   // clock
+  paintLastPick(seq, nextIdx);
   if(!cur){ $('clock').innerHTML = 'Draft complete.'; $('until').textContent = '';
             _mineNow = false; _curPick = null; pendingPid = null; sentName = null;
             paintUpNow(false, null); }
@@ -1301,6 +1381,9 @@ list.addEventListener('drop', e => {
 });
 
 function orderState(){
+  /* Rule #9: #orderState is REMOVED from the shared build, and this is called from
+     init, from the drop handler and from setSort. */
+  if(!$('orderState')) return;
   const n = custom.length
     ? orderedPool().slice(0, TOP_N).filter(p => BASE_AT.get(String(p.id)) !== custom.indexOf(String(p.id))).length
     : 0;
@@ -1333,19 +1416,21 @@ function setEdit(on){
      drag land in a slot that means something else in the saved order. */
   if(on && sortBy){ sortBy = null; sortDir = 1; paintHeader(); }
   if(on && draftStarted()){
-    $('orderState').innerHTML = '<span class="locked">The draft has started. Reordering is locked.</span>';
+    const os = $('orderState');
+    if(os) os.innerHTML = '<span class="locked">The draft has started. Reordering is locked.</span>';
     return;
   }
   editing = !!on;
-  $('edit').textContent = 'Reorder: ' + (editing ? 'ON' : 'off');
-  $('edit').classList.toggle('on', editing);
+  /* Rule #9: #edit is REMOVED from the shared build. */
+  const eb = $('edit');
+  if(eb){ eb.textContent = 'Reorder: ' + (editing ? 'ON' : 'off'); eb.classList.toggle('on', editing); }
   document.body.classList.toggle('editing', editing);
   if(S) paintList(counts());
   paintHeader();   /* the grip column appears and disappears with Reorder */
   orderState();
 }
-$('edit').onclick = () => setEdit(!editing);
-$('reset').onclick = () => {
+if($('edit')) $('edit').onclick = () => setEdit(!editing);
+if($('reset')) $('reset').onclick = () => {
   if(!custom.length) return;
   if(!confirm("Throw away your order and go back to Berry's ranking?")) return;
   custom = []; _orderCache = null;
