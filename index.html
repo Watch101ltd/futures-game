@@ -106,7 +106,71 @@
   .rook{flex:none;color:var(--gold);font-size:calc(var(--s)*15px);line-height:1}
   .row.gone .rook{opacity:.5}
   .by{color:var(--dim);font-size:calc(var(--s)*14px);flex:none;width:calc(var(--s)*60px)}
-  .took{color:var(--gold);font-size:calc(var(--s)*14px);font-weight:600;flex:none;white-space:nowrap}
+  /* SORT_HEADER_V1 (2026-08-25): this column used to have NO width, and because the
+     name beside it is the flexible one, a long "kept by Two Handed" shoved team, bye,
+     Berry and ADP left while a short one let them drift back. Every row was a slightly
+     different shape. Nothing could be hung above them. Pinning it puts the four columns
+     to its left into true straight lines, which is what makes the header honest. */
+  .took{color:var(--gold);font-size:calc(var(--s)*14px);font-weight:600;flex:none;
+        width:calc(var(--s)*132px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* ---- SORT_HEADER_V1: the clickable header bar. HIS COPY ONLY. ----
+     It is a plain flex row using the SAME width classes as a real row, so the two can
+     never drift apart: change a column width above and the header follows for free.
+     It sits OUTSIDE .list on purpose, so it stays put while the list scrolls. */
+  /* ---- CLOCK_BANNER_V1 (2026-08-26): the "you are up" bar for the manager who is
+     not in the room. THE LEAGUE'S COPY ONLY -- the Dude has the actual board in front
+     of him with its own clock and chime, so on his sheet this would be noise covering
+     his player list thirteen times.
+
+     Everything it needs was ALREADY being worked out for the little text line in the
+     top bar. Nothing new is computed; it is the same fact said loudly. */
+  .upnow{display:none}
+  .upnow.on{position:sticky;top:0;z-index:25}
+  .upnow.on{
+    display:block;text-align:center;
+    padding:calc(var(--s)*14px) calc(var(--s)*10px);
+    background:var(--gold);color:#1a1005;
+    font-size:calc(var(--s)*30px);font-weight:900;letter-spacing:.5px;line-height:1.15;
+    border-bottom:3px solid #1a1005;
+    animation:upflash 1.15s ease-in-out infinite;
+  }
+  .upnow .sub{display:block;font-size:calc(var(--s)*15px);font-weight:700;
+              letter-spacing:.3px;margin-top:calc(var(--s)*3px);opacity:.78}
+  /* REMOTE_PICK_V1: the send button, thumb sized. Green so it can never be mistaken
+     for the gold "you are up" state behind it. */
+  .upnow .send{display:block;width:100%;margin-top:calc(var(--s)*9px);
+    padding:calc(var(--s)*14px) calc(var(--s)*10px);border:none;border-radius:8px;
+    background:#1f7a44;color:#fff;font-size:calc(var(--s)*21px);font-weight:900;
+    letter-spacing:.3px;cursor:pointer;font-family:inherit;line-height:1.2}
+  .upnow .send:active{background:#155c32}
+  .upnow.sent{background:#1f7a44;color:#fff;animation:none}
+  .upnow.sent .sub{opacity:.9}
+  .row.picking{box-shadow:inset 0 0 0 3px #1f7a44;background:rgba(31,122,68,.18)}
+  /* Brightness rather than movement on purpose: a bar that slides or bounces makes the
+     list under it hard to read, and he has to read the list while it is showing. */
+  @keyframes upflash{0%,100%{filter:brightness(1)}50%{filter:brightness(.8)}}
+
+  .hrow{display:flex;align-items:center;gap:calc(var(--s)*11px);
+        padding:calc(var(--s)*7px) calc(var(--s)*9px);margin:0 8px;
+        border-bottom:2px solid var(--line);background:var(--panel2);
+        font-size:calc(var(--s)*12px);text-transform:uppercase;letter-spacing:.6px;
+        color:var(--dim);font-weight:800;user-select:none}
+  /* No clipping: these labels reuse the ROW widths, and a couple of them (Berry, ADP)
+     are only just wide enough for the word plus a sort arrow. The 11px gap between
+     columns absorbs a character of overhang, whereas overflow:hidden would chop the
+     arrow off and leave him wondering which way it was pointing. */
+  .hrow > span{cursor:pointer;white-space:nowrap;border-radius:3px}
+  /* .pos is a white chip on a coloured background down in the rows. Up here it is a
+     label like all the others, so the chip styling is undone rather than inherited. */
+  .hrow .pos{color:inherit;background:none;padding:0;font-size:calc(var(--s)*12px);
+             font-weight:800;text-align:left}
+  .hrow > span:hover{color:var(--ink)}
+  .hrow .on{color:var(--gold)}
+  .hrow .ar{font-size:calc(var(--s)*10px);margin-left:2px}
+  /* the drag handle column only exists while Reorder is on, so the header matches it */
+  .hrow .grip{visibility:hidden;cursor:default}
+  .hrow .nm{font-size:calc(var(--s)*12px);font-weight:800}
   .rk{color:var(--dim);font-size:calc(var(--s)*14px);font-weight:700;
       width:calc(var(--s)*48px);flex:none;text-align:right}
 
@@ -167,6 +231,61 @@
                 animation:pulse 1.4s ease-in-out infinite}
   @keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(224,164,76,.35)}
                    50%{box-shadow:0 0 0 7px rgba(224,164,76,.12)}}
+
+  /* ================= PHONE_LAYOUT_V1 (2026-08-26) =================
+     This sheet had a viewport tag from day one and NOT ONE media rule behind it, so
+     it has always been a desktop page wearing a phone's clothes. It splits into two
+     columns and the right one is PINNED at 430 scaled units, about 495px at his text
+     size. A phone is about 390px across. So the right panel alone was wider than the
+     whole screen and the player list, which is the entire point of the page, got
+     crushed into whatever was left.
+
+     Three moves, and the reasoning matters more than the numbers:
+
+     1. STACK, do not shrink. Below 760px the two columns become one. List first,
+        because on a phone the thing you came for has to be the thing you land on.
+
+     2. LET THE PAGE SCROLL. On the desktop the list is its own scrolling pane inside
+        a fixed-height frame. Nested scrolling panes on a phone are miserable: you
+        flick and the wrong thing moves. The frame is released and the page scrolls
+        as one, the way every other phone page does.
+
+     3. LET THE ROW WRAP INSTEAD OF FORCING ONE LINE. The columns add up to roughly
+        390px of fixed width BEFORE the player's name, so one line was never going to
+        fit. Rather than picking columns to delete, the row is allowed to wrap and the
+        name is given a floor to sit on. It self-adjusts: a wide phone keeps one line,
+        a narrow one drops team and bye onto a second. Nothing is hidden, so he never
+        goes looking for something that is not there. */
+  @media (max-width:760px){
+    .wrap{display:block;height:auto}
+    .left{display:block}
+    .right{flex:none;width:auto;border-left:none;border-top:3px solid var(--line)}
+    /* the list stops being its own scroller and becomes part of the page */
+    .list{flex:none;overflow:visible;padding:0 0 24px}
+
+    .top{flex-wrap:wrap;height:auto;padding:6px 8px;gap:4px}
+    .tabs{padding:6px 8px}
+    /* fat enough to hit with a thumb without aiming */
+    .tab{padding:calc(var(--s)*8px) calc(var(--s)*14px)}
+
+    .row{flex-wrap:wrap;gap:calc(var(--s)*5px) calc(var(--s)*9px);
+         padding:calc(var(--s)*10px) calc(var(--s)*10px);border-radius:0;
+         border-bottom:1px solid rgba(255,255,255,.06)}
+    .nm{flex:1 1 auto;min-width:calc(var(--s)*150px);font-size:calc(var(--s)*18px)}
+    /* widths become floors rather than cages, so nothing gets clipped when it wraps */
+    .rk{width:auto;min-width:calc(var(--s)*38px);text-align:left}
+    .tm{width:auto;min-width:calc(var(--s)*34px)}
+    .by{width:auto;min-width:calc(var(--s)*40px)}
+    .own,.adpn{width:auto;text-align:left}
+    .took{width:auto;max-width:100%}
+
+    /* A fixed header cannot sit over rows that wrap to different heights, and it is
+       on his own laptop copy anyway. It goes rather than lie about where a column is. */
+    .hrow{display:none}
+
+    .upnow.on{font-size:calc(var(--s)*22px);padding:calc(var(--s)*11px) calc(var(--s)*8px)}
+    .upnow .sub{font-size:calc(var(--s)*13px)}
+  }
 </style>
 </head>
 <body>
@@ -180,6 +299,9 @@
 
 <div class="wrap">
   <div class="left">
+    <!-- CLOCK_BANNER_V1: sits at the very top of the list column so it cannot be
+         scrolled past. Empty and display:none until it is actually his turn. -->
+    <div class="upnow" id="upnow"></div>
     <div class="tabs" id="tabs"></div>
     <div class="tabs" style="border-bottom:2px solid var(--line)">
       <button id="edit" title="Turn dragging on so you can move players up and down. Your order is saved.">Reorder: off</button>
@@ -194,6 +316,8 @@
     </div>
     <div class="scarce" id="scarce"></div>
     <div class="src" id="src"></div>
+    <!-- SORT_HEADER_V1: emptied and hidden on the shared build by the script below. -->
+    <div class="hrow" id="hrow"></div>
     <div class="list" id="list"><div class="empty">
       Open this from the <b>Cheat Sheet</b> button on the draft board and it will fill in by itself.
       <br><br>Every pick you enter on the board strikes the player off this list and updates the
@@ -274,6 +398,9 @@ if (SHARED) {
   document.addEventListener('DOMContentLoaded', function(){
     const nh = document.getElementById('needhead');   if (nh && nh.remove) nh.remove();
     const rb = document.getElementById('runsblock');  if (rb && rb.remove) rb.remove();
+    /* SORT_HEADER_V1: the sort header goes too. It carries no data, only labels, so
+       this is about not showing the league a control bar for numbers they do not get. */
+    const hr = document.getElementById('hrow');        if (hr && hr.remove) hr.remove();
   });
 }
 const LIVE_URL = 'https://nfl-nas.fantasywatch101.com';
@@ -288,6 +415,145 @@ const FLEX = 1;
 const POSES = ['QB','RB','WR','TE','DST'];
 
 let S = null, meIdx = null, filter = 'ALL', lastSig = '', needPick = false;
+
+/* ---------- SORT_HEADER_V1 (2026-08-25) ----------
+   Click a column label to sort the list by it. HIS COPY ONLY: the league's sheet has
+   no numbers on it, so a Berry or ADP header there would label an empty column.
+
+   🪨 THIS IS A VIEW, NOT AN EDIT. It never writes to `custom`, the hand-drag order in
+   localStorage. Sorting is a lens you look through; clicking back to Default puts his
+   own order back exactly as it was. Nothing he has dragged can be lost by sorting.
+
+   Three states per column: first click ascending, second descending, third back to
+   Default (Berry, or his own order if he has dragged one).
+
+   sortBy === null means Default. That is the ONLY state in which tier bars are drawn
+   and dragging is allowed, because both of those only make sense in ranking order. */
+let sortBy = null, sortDir = 1;
+
+/* ---------- REMOTE_PICK_V1 (2026-08-26) ----------
+   One manager cannot get to the draft and will be on his phone. He owns pick 1 of
+   EVERY round in a straight draft, so the whole room waits on him thirteen times.
+
+   🪨 THE PICK DOES NOT TRAVEL THROUGH THE DRAFT BOARD, AND THAT IS THE WHOLE DESIGN.
+   It goes to a Home Assistant webhook, which buzzes the Dude's phone. He types it in
+   himself, exactly as he types everyone else's. So nothing new can write to the board,
+   nothing on the NAS changed, and if every part of this fails on Saturday the answer is
+   the same as it has always been: the guy phones in his pick. This is a shortcut, never
+   a dependency. Same rule the live publishing was built under.
+
+   WHY A GET FIRED AS AN IMAGE, and this is the part not to "tidy up" later: a browser
+   will not let a page on GitHub quietly POST to another site unless that site says it
+   is allowed, and saying so means editing configuration.yaml. Rule #18 forbids asking
+   him to touch that file. An image load is exempt from that whole mechanism, so a GET
+   dressed as an image gets through with nothing to configure. HA reads the values off
+   the query string as trigger.query.
+
+   The cache-buster is NOT decoration. Without it, sending the same player twice in a
+   row is an identical URL, and the browser would serve the second one out of its own
+   cache and never touch the network. His correction would silently never arrive. */
+const HA_WEBHOOK = 'https://m83l7x3jyktd45rufvqex1j2rtns2db0.ui.nabu.casa/api/webhook/nohomers_remote_pick';
+const REMOTE_TEAM = 'Trash Boat';
+/* Compared with spaces, case and punctuation stripped, so "Trashboat", "trash boat"
+   and "Trash  Boat" all match. A team rename should not silently kill his button. */
+const flat = x => String(x||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+function isRemoteMe(){
+  return SHARED && meIdx !== null && S && S.teams
+      && flat(S.teams[meIdx]) === flat(REMOTE_TEAM);
+}
+let _mineNow = false, _curPick = null, pendingPid = null, sentName = null;
+
+function sendRemotePick(p){
+  const label = String(p.n) + ' (' + norm(p.pos) + (p.tm ? ' ' + p.tm : '') + ')';
+  const q = '?team='   + encodeURIComponent(REMOTE_TEAM)
+          + '&player=' + encodeURIComponent(label)
+          + '&round='  + encodeURIComponent(_curPick ? _curPick.r : '?')
+          + '&t='      + Date.now();
+  try { new Image().src = HA_WEBHOOK + q; } catch(e){}
+  sentName = label;
+  pendingPid = null;
+  paintUpNow(_mineNow, _curPick);
+}
+
+/* Every column, in row order, with the value each one sorts on. `miss` is what a player
+   with no value for that column gets: it always sinks him to the bottom in BOTH
+   directions, the same rule the site's pool sorts use, so a man Berry has no opinion on
+   never floats to the top just because the sort was flipped. */
+const SORTCOLS = [
+  { key:'rank',  cls:'rk',   label:'Rank',   tip:'Position rank, QB then RB then WR then TE then DST' },
+  { key:'pos',   cls:'pos',  label:'Pos',    tip:'Position' },
+  { key:'name',  cls:'nm',   label:'Player', tip:'Player name, A to Z' },
+  { key:'team',  cls:'tm',   label:'Team',   tip:'NFL team' },
+  { key:'bye',   cls:'by',   label:'Bye',    tip:'Bye week' },
+  { key:'berry', cls:'own',  label:'Berry',  tip:"Matthew Berry's rank. This is the default order." },
+  { key:'adp',   cls:'adpn', label:'ADP',    tip:'Where the room is actually taking him' },
+  { key:'taken', cls:'took', label:'Taken',  tip:'Who has been drafted, and by whom' }
+];
+const POSORD = { QB:1, RB:2, WR:3, TE:4, DST:5 };
+function sortVal(key, p, gone){
+  const ps = norm(p.pos);
+  switch(key){
+    case 'rank':  return (POSORD[ps] || 9) * 1000 + (parseInt(p._posRank, 10) || 999);
+    case 'pos':   return POSORD[ps] || 9;
+    case 'name':  return String(p.n || '').toLowerCase();
+    case 'team':  return String(p.tm || '');
+    case 'bye':   return p.bye ? Number(p.bye) : null;
+    case 'berry': { const b = BERRY_BY_ID.get(String(p.id)); return b ? Number(b.r) : null; }
+    case 'adp':   { const a = ADP_BY_ID.get(String(p.id)); return a ? Number(a.adp) : null; }
+    case 'taken': { const g = gone.get(String(p.id));
+                    return g ? String(shortOf(S.teams[g.t]) || '') : null; }
+  }
+  return null;
+}
+/* Missing values sink either way, so the comparator cannot simply negate for descending.
+   BASE_AT is the tie-break so an unsorted-equal group keeps Berry order rather than
+   shuffling about between repaints. */
+function applySort(list, gone){
+  if(!sortBy) return list;
+  const dir = sortDir;
+  return list.slice().sort((a, b) => {
+    const A = sortVal(sortBy, a, gone), B = sortVal(sortBy, b, gone);
+    const an = (A === null || A === undefined || A !== A);
+    const bn = (B === null || B === undefined || B !== B);
+    if(an && bn) return BASE_AT.get(String(a.id)) - BASE_AT.get(String(b.id));
+    if(an) return 1;
+    if(bn) return -1;
+    let c = (typeof A === 'string') ? A.localeCompare(B) : (A - B);
+    if(c) return c * dir;
+    return BASE_AT.get(String(a.id)) - BASE_AT.get(String(b.id));
+  });
+}
+function paintHeader(){
+  const el = $('hrow');
+  if(!el) return;
+  if(SHARED){ el.style.display = 'none'; el.innerHTML = ''; return; }
+  let h = editing ? '<span class="grip">&#8942;&#8942;</span>' : '';
+  for(const c of SORTCOLS){
+    const on = (sortBy === c.key);
+    h += '<span class="' + c.cls + (on ? ' on' : '') + '" data-sort="' + c.key + '" title="'
+       + c.tip + (on ? ' &middot; click again to ' + (sortDir === 1 ? 'reverse it' : 'go back to the default order')
+                     : ' &middot; click to sort') + '">'
+       + c.label + (on ? '<span class="ar">' + (sortDir === 1 ? '&#9650;' : '&#9660;') + '</span>' : '')
+       + '</span>';
+  }
+  el.innerHTML = h;
+  /* The list scrolls and the header does not, so the header is wider by exactly the
+     scrollbar. Measured rather than assumed, because the width differs by browser and
+     by whether the list is long enough to scroll at all. */
+  const L = $('list');
+  el.style.paddingRight = 'calc(var(--s)*9px + ' + Math.max(0, L.offsetWidth - L.clientWidth) + 'px)';
+}
+function setSort(key){
+  if(sortBy !== key){ sortBy = key; sortDir = 1; }
+  else if(sortDir === 1){ sortDir = -1; }
+  else { sortBy = null; sortDir = 1; }
+  /* Dragging against a sorted view would move a player to a slot that means something
+     different in his saved order, so a sort switches Reorder off rather than risk it. */
+  if(sortBy && editing) setEdit(false);
+  if(S) paintList(counts());
+  paintHeader();
+  orderState();
+}
 
 /* ---------- YOUR OWN ORDER ----------
    Berry's ordering is a starting point, not gospel. Drag players around and the
@@ -633,6 +899,52 @@ function sequence(){
   return seq;
 }
 
+/* CLOCK_BANNER_V1: the loud half of the clock, for the man who is not in the room.
+   Guarded on SHARED and on the element existing, per Rule #9 -- render() runs on both
+   builds and a missing element here would throw INSIDE render(), which would take the
+   whole player list down with it. That exact shape of bug was caught on this project on
+   2026-08-24 when #runsblock was stripped. */
+function paintUpNow(mineNow, cur){
+  const el = $('upnow');
+  if(!el) return;
+  if(!SHARED || !mineNow || !cur){
+    if(el.className !== 'upnow'){ el.className = 'upnow'; el.innerHTML = ''; }
+    return;
+  }
+  /* REMOTE_PICK_V1: the absent manager gets a send button in the bar. Everybody else
+     gets the plain announcement, unchanged. */
+  let html, cls = 'upnow on';
+  if(isRemoteMe()){
+    const p = pendingPid ? BY_ID.get(String(pendingPid)) : null;
+    if(p){
+      html = 'SEND YOUR PICK'
+           + '<button class="send" id="sendpick" type="button">' + esc(p.n)
+           + '  &middot;  ' + norm(p.pos) + (p.tm ? ' ' + esc(p.tm) : '') + '</button>'
+           + '<span class="sub">tap it to send &middot; or tap another player to change</span>';
+    } else if(sentName){
+      cls = 'upnow on sent';
+      html = 'SENT TO JAY'
+           + '<span class="sub">' + esc(sentName)
+           + '<br>waiting for him to enter it &middot; tap another player to change it</span>';
+    } else {
+      html = 'YOU ARE ON THE CLOCK'
+           + '<span class="sub">Round ' + cur.r + ' &middot; tap a player below to send him to Jay</span>';
+    }
+  } else {
+    html = 'YOU ARE ON THE CLOCK'
+         + '<span class="sub">Round ' + cur.r + ' &middot; pick your man and tell the room</span>';
+  }
+  /* Only touch the DOM when something actually changed. render() runs every time a
+     poll comes back, which is every 4 seconds, and rewriting the bar each time would
+     restart its flash animation and make it stutter. */
+  if(el.innerHTML !== html){
+    el.innerHTML = html;
+    const b = $('sendpick');
+    if(b) b.onclick = () => { const p = BY_ID.get(String(pendingPid)); if(p) sendRemotePick(p); };
+  }
+  if(el.className !== cls){ el.className = cls; }
+}
+
 /* ---------- render ---------- */
 function render(){
   if(!S) return;
@@ -657,7 +969,9 @@ function render(){
   const cur = nextIdx < 0 ? null : seq[nextIdx];
 
   // clock
-  if(!cur){ $('clock').innerHTML = 'Draft complete.'; $('until').textContent = ''; }
+  if(!cur){ $('clock').innerHTML = 'Draft complete.'; $('until').textContent = '';
+            _mineNow = false; _curPick = null; pendingPid = null; sentName = null;
+            paintUpNow(false, null); }
   else {
     const mineNow = cur.t === meIdx;
     $('clock').innerHTML = mineNow
@@ -667,6 +981,12 @@ function render(){
     for(let i = nextIdx; i < seq.length; i++){ if(seq[i].t === meIdx){ ahead = i - nextIdx; break; } }
     $('until').innerHTML = mineNow ? ''
       : (ahead < 0 ? 'no picks left' : '<b>' + ahead + '</b> pick' + (ahead===1?'':'s') + ' until you are up');
+    /* Held for the row-click handler below, which has no other way to know whose turn
+       it is. Cleared the moment his turn ends so a stale selection cannot be sent into
+       the next round by a mis-tap. */
+    if(_mineNow && !mineNow){ pendingPid = null; sentName = null; }
+    _mineNow = mineNow; _curPick = cur;
+    paintUpNow(mineNow, cur);
   }
 
   /* ROSTER_PANEL_V1 — the lineup card.
@@ -789,7 +1109,10 @@ function paintList(C){
   const gone = drafted();
   const myHoles = {}; holes(C[meIdx]).forEach(h => myHoles[h[0]] = true);
 
-  const ORD = orderedPool();
+  /* SORT_HEADER_V1: the sort wraps the order, it does not replace it. orderedPool()
+     is still his own drag order underneath, untouched, and comes straight back when he
+     clicks the header to Default. */
+  const ORD = applySort(orderedPool(), gone);
   const q = ($('find').value || '').trim().toLowerCase();
   let rows;
   if(q)                    rows = ORD.filter(p => String(p.n).toLowerCase().indexOf(q) >= 0).slice(0, 40);
@@ -816,7 +1139,10 @@ function paintList(C){
     /* SHARED_STRIP_V1, his call 2026-08-24: tiers are analysis, not data. A tier
        break tells you where the drop-off is, which is most of the value of a cheat
        sheet. The league's copy gets the ordering and nothing that interprets it. */
-    if(!SHARED && filter !== 'ALL' && key !== lastTierKey){
+    /* SORT_HEADER_V1: no tier bars in a sorted view. A tier bar says "everyone below
+       this line is a step down", which is only true while the list is in ranking order.
+       Sorted by name or bye week it would fire on almost every row and mean nothing. */
+    if(!SHARED && !sortBy && filter !== 'ALL' && key !== lastTierKey){
       const left = tierAlive[key] || 0;
       out += '<div class="tierbar">' + ps + ' tier ' + p._tier
            + ' <span>' + (left ? left + ' still on the board' : 'all gone') + '</span></div>';
@@ -924,6 +1250,19 @@ $('meSel').onchange = e => {
 
 /* ---------- dragging ---------- */
 let dragId = null;
+/* REMOTE_PICK_V1: tapping a player arms him. It never sends on its own -- sending is
+   a second, deliberate tap on the green button. On a phone, one-tap-to-send would be a
+   mis-tap away from burning a pick on the wrong man. */
+$('list').addEventListener('click', e => {
+  if(!isRemoteMe() || !_mineNow) return;
+  const r = e.target.closest('.row');
+  if(!r || r.classList.contains('gone')) return;
+  pendingPid = r.dataset.pid;
+  [...$('list').querySelectorAll('.picking')].forEach(x => x.classList.remove('picking'));
+  r.classList.add('picking');
+  paintUpNow(_mineNow, _curPick);
+});
+
 const list = $('list');
 list.addEventListener('dragstart', e => {
   const r = e.target.closest('.row'); if(!r || !editing) return;
@@ -955,6 +1294,15 @@ function orderState(){
   const n = custom.length
     ? orderedPool().slice(0, TOP_N).filter(p => BASE_AT.get(String(p.id)) !== custom.indexOf(String(p.id))).length
     : 0;
+  /* SORT_HEADER_V1: a sorted view is temporary and he must never mistake it for his
+     saved order, so it is named on screen and it says how to get back. */
+  if(sortBy){
+    const c = SORTCOLS.find(x => x.key === sortBy);
+    $('orderState').innerHTML = '<span class="locked">Sorted by ' + (c ? c.label : sortBy)
+      + (sortDir === 1 ? ' &#9650;' : ' &#9660;')
+      + '. Your own order is safe &middot; click that label again to come back.</span>';
+    return;
+  }
   $('orderState').textContent = custom.length
     ? (n ? n + ' player' + (n===1?'':'s') + " moved from Berry's order" : 'your own order, nothing moved yet')
     : "straight Berry order";
@@ -970,6 +1318,10 @@ function draftStarted(){
   return false;
 }
 function setEdit(on){
+  /* SORT_HEADER_V1: you can only drag the order you are actually looking at. Turning
+     Reorder on therefore snaps the list back to Default first, rather than letting a
+     drag land in a slot that means something else in the saved order. */
+  if(on && sortBy){ sortBy = null; sortDir = 1; paintHeader(); }
   if(on && draftStarted()){
     $('orderState').innerHTML = '<span class="locked">The draft has started. Reordering is locked.</span>';
     return;
@@ -979,6 +1331,7 @@ function setEdit(on){
   $('edit').classList.toggle('on', editing);
   document.body.classList.toggle('editing', editing);
   if(S) paintList(counts());
+  paintHeader();   /* the grip column appears and disappears with Reorder */
   orderState();
 }
 $('edit').onclick = () => setEdit(!editing);
@@ -990,6 +1343,19 @@ $('reset').onclick = () => {
   if(S) paintList(counts());
   orderState();
 };
+/* SORT_HEADER_V1: one listener on the bar rather than eight, so a column added to
+   SORTCOLS is wired up for free. */
+/* Rule #9 guard: #hrow is REMOVED from the shared build, so this must survive its
+   absence. paintHeader() carries the same null check. */
+(function(){
+  const hb = $('hrow');
+  if(!hb) return;
+  hb.addEventListener('click', e => {
+    const t = e.target.closest('[data-sort]');
+    if(t) setSort(t.dataset.sort);
+  });
+})();
+
 let findT = null;
 $('find').oninput = () => {
   clearTimeout(findT);
@@ -1009,6 +1375,7 @@ $('fsUp').onclick   = () => { fs = Math.min(2.2, fs + 0.1); applyFs(); };
 $('fsDown').onclick = () => { fs = Math.max(0.8, fs - 0.1); applyFs(); };
 applyFs();
 
+paintHeader();
 orderState();
 
 $('src').innerHTML = BERRY && BERRY.players
