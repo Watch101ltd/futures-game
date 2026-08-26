@@ -257,6 +257,16 @@
         a narrow one drops team and bye onto a second. Nothing is hidden, so he never
         goes looking for something that is not there. */
   @media (max-width:760px){
+    /* 🚨 THE ONE THAT MATTERS. FOUND BY THE DUDE ON HIS OWN PHONE, 2026-08-26.
+       The desktop design locks the body to exactly one screen -- html,body{height:100%}
+       and body{overflow:hidden} -- because the player list is its own scroller INSIDE
+       that frame. Releasing .list to flow down the page without ALSO releasing the body
+       grew the content to about 21,900px inside a box still clamped at 836px. Every row
+       below the first screenful was rendered, present in the DOM, and unreachable. The
+       page did not look broken. It looked short.
+       🪨 A CONTAINER THAT CLIPS DOES NOT ANNOUNCE ITSELF. The overflow that hides the
+       content is set two levels above the element that grew. */
+    html,body{height:auto;overflow:visible}
     .wrap{display:block;height:auto}
     .left{display:block}
     .right{flex:none;width:auto;border-left:none;border-top:3px solid var(--line)}
