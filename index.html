@@ -82,6 +82,49 @@
   .row.gone{opacity:.34}
   .row.gone .nm{text-decoration:line-through;text-decoration-thickness:2px}
   .row.mine{box-shadow:inset 3px 0 0 var(--me);background:rgba(61,138,89,.12)}
+
+  /* RED_FLAG_V1 (2026-08-26, his request): click a player, his whole row goes bright red.
+     HIS COPY ONLY -- the league's sheet never gets this, and never gets the marks either.
+
+     Scoped through .list so it outranks the striping on .row:nth-child(even) and the
+     green .mine wash on merit rather than on being further down the file. Two rules at
+     equal weight are settled by source order, and source order is the kind of thing a
+     later edit moves without noticing.
+
+     The ink is forced white across every column because the row colours underneath are
+     tuned for a near-black background -- the dim greys on team and bye vanish completely
+     on red. 🪨 Colouring the paper means re-checking the ink, the same lesson the shaded
+     FPts column taught on 8/22. */
+  .list .row.hot{background:#d81f26;box-shadow:inset 4px 0 0 #ff8a8a}
+  .list .row.hot .nm,
+  .list .row.hot .rk,
+  .list .row.hot .tm,
+  .list .row.hot .by,
+  .list .row.hot .own,
+  .list .row.hot .adpn,
+  .list .row.hot .took{color:#fff}
+  /* the value/reach tints would be invisible on red, so they become a readable gold */
+  .list .row.hot .adpn.val,
+  .list .row.hot .adpn.rch{color:#ffdf7e}
+
+  /* RED_FLAG_SYNC_V1 (2026-08-28): the export / import panel. Deliberately plain --
+     it is a two-click errand between machines, not part of drafting. */
+  .markwrap{position:fixed;inset:0;background:rgba(0,0,0,.66);z-index:99;
+            display:flex;align-items:center;justify-content:center;padding:20px}
+  .markbox{background:var(--panel);border:2px solid var(--line);border-radius:8px;
+           padding:16px 18px;max-width:640px;width:100%}
+  .markbox h3{margin:0 0 6px;font-size:calc(var(--s)*17px)}
+  .markbox p{margin:0 0 10px;color:var(--dim);line-height:1.45}
+  .markbox textarea{width:100%;height:120px;background:var(--bg);color:var(--ink);
+           border:1px solid var(--line);border-radius:5px;padding:8px;
+           font-family:Consolas,monospace;font-size:calc(var(--s)*12px);resize:vertical}
+  .markrow{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+  .marksay{color:var(--gold)}
+  .marksay.bad{color:#ff9d9d}
+  .list .row.hot .rook{color:#fff2b0}
+  /* a drafted man he had flagged stays flagged, just faded like every other gone row */
+  .list .row.hot.gone{background:#7a161b}
+  body:not(.editing) .list .row:not(.gone){cursor:pointer}
   .pos{width:calc(var(--s)*42px);text-align:center;border-radius:4px;
        font-size:calc(var(--s)*13px);font-weight:800;padding:calc(var(--s)*3px) 0;
        color:#fff;flex:none}
@@ -377,6 +420,10 @@
       <button id="edit" title="Turn dragging on so you can move players up and down. Your order is saved.">Reorder: off</button>
       <input id="find" placeholder="find a player to move…">
       <button id="reset" title="Throw away your changes and go back to Berry's order">Reset to default</button>
+      <!-- RED_FLAG_SYNC_V1 (2026-08-28, his request): carry the red marks between the
+           PC and the laptop. HIS COPY ONLY -- stripped from the league build below. -->
+      <button id="marksOut" title="Save your red marks to a file so you can load them on your other machine">Marks: export</button>
+      <button id="marksIn" title="Load red marks from a file you exported on your other machine">Marks: import</button>
       <span id="orderState" style="color:var(--dim)"></span>
       <span id="textsize" style="margin-left:auto;display:flex;gap:5px;align-items:center">
         <span style="color:var(--dim)">Text</span>
@@ -479,7 +526,10 @@ if (SHARED) {
        actually needs with the room waiting on him. Its placeholder said "find a player to
        MOVE", which described the reordering that is now gone, so it is retitled to say
        what it really does. */
-    ['edit','reset','orderState','textsize'].forEach(function(id){
+    /* RED_FLAG_SYNC_V1: the marks buttons go with them. The league never gets the
+       red flag feature, so a control for moving marks around would be a button
+       for a thing their copy cannot do. */
+    ['edit','reset','orderState','textsize','marksOut','marksIn'].forEach(function(id){
       const n = document.getElementById(id); if (n && n.remove) n.remove();
     });
     const fi = document.getElementById('find');
@@ -520,6 +570,204 @@ let S = null, meIdx = null, filter = 'ALL', lastSig = '', needPick = false;
    sortBy === null means Default. That is the ONLY state in which tier bars are drawn
    and dragging is allowed, because both of those only make sense in ranking order. */
 let sortBy = null, sortDir = 1;
+
+/* ---------- RED_FLAG_V1 (2026-08-26) ----------
+   His own sheet only. Click a player and the row goes bright red; click again and it
+   goes back. Saved in this browser under its own key so he can mark men up tonight and
+   still see them on Saturday.
+
+   🪨 ITS OWN KEY, DELIBERATELY. Not folded into the drag order, and nowhere near the
+   draft. Nothing he shades can touch a pick, and "Reset to default" throws away his
+   ORDER without touching his marks -- two different ideas, two different buttons. */
+const HOTKEY = 'nohomers-cheatsheet-red';
+let HOT = new Set();
+try {
+  const raw = JSON.parse(localStorage.getItem(HOTKEY) || '[]');
+  if (Array.isArray(raw)) HOT = new Set(raw.map(String));
+} catch(e){ HOT = new Set(); }
+function saveHot(){
+  try { localStorage.setItem(HOTKEY, JSON.stringify([...HOT])); } catch(e){}
+}
+function toggleHot(pid, rowEl){
+  pid = String(pid);
+  if(HOT.has(pid)) HOT.delete(pid); else HOT.add(pid);
+  saveHot();
+  /* The class is flipped on the element in front of him rather than repainting the whole
+     list: a repaint would throw away his scroll position, and on a 260-row list that is
+     the difference between marking men up and hunting for his place again. paintList
+     re-emits the class from HOT on the next real repaint, so the two cannot drift. */
+  if(rowEl && rowEl.classList) rowEl.classList.toggle('hot', HOT.has(pid));
+}
+
+/* ---------- RED_FLAG_SYNC_V1 (2026-08-28, his request) ----------
+   The marks live in THIS browser, and browser storage does not travel between
+   machines. He marks men up on the PC through the day and drafts off the laptop,
+   so on 2026-08-28 the entire list had to be carried across by hand through the
+   console. These two buttons make it a two-click errand in both directions.
+
+   🪨 A FILE, NOT THE NAS, AND THAT IS THE WHOLE CALL. Marks posted to the server
+   and pulled down anywhere is the better feature and it is logged for after the
+   draft. It is also a real build touching the NAS, asked for the day before the
+   draft. A file riding the Synology sync he already has adds nothing new that has
+   to be standing on Saturday morning. The cheat sheet does not gain a dependency
+   it cannot draft without -- same rule the remote pick was built under.
+
+   🪨 EXPORT NEVER LEANS ON ONE MECHANISM. A page opened from a file:// path can
+   have its download refused and its clipboard write refused, and either failure
+   would land on him on draft eve. So the raw text goes ON SCREEN in a selectable
+   box FIRST, and the download and the copy are conveniences on top of it. If both
+   are blocked he can still select the box and copy it by hand.
+
+   🪨 IMPORT REPLACES, AND SAYS SO BEFORE IT DOES. Quietly merging would let a
+   stale file resurrect marks he had deliberately cleared, and he would never know
+   which list he was looking at. It shows both counts and asks. */
+function _mk(tag, css, html){
+  const n = document.createElement(tag);
+  if(css) n.setAttribute('style', css);
+  if(html !== undefined) n.innerHTML = html;
+  return n;
+}
+function _marksStamp(){
+  const d = new Date(), z = n => (n < 10 ? '0' : '') + n;
+  return d.getFullYear() + '-' + z(d.getMonth()+1) + '-' + z(d.getDate());
+}
+function _marksPanel(html){
+  const wrap = _mk('div', '', '<div class="markbox">' + html + '</div>');
+  wrap.className = 'markwrap';
+  document.body.appendChild(wrap);
+  const close = function(){ if(wrap.parentNode) wrap.parentNode.removeChild(wrap); };
+  wrap.addEventListener('click', function(e){ if(e.target === wrap) close(); });
+  document.addEventListener('keydown', function esc(e){
+    if(e.key === 'Escape'){ close(); document.removeEventListener('keydown', esc); }
+  });
+  return { wrap: wrap, close: close };
+}
+/* Turns whatever came out of a file or a paste into a clean list of ids, or an
+   error he can act on. Never throws, never half-applies. */
+function marksParse(raw){
+  let arr;
+  try { arr = JSON.parse(String(raw == null ? '' : raw).trim()); }
+  catch(e){ return { err: 'That is not valid JSON. Paste the whole thing, square brackets and all.' }; }
+  if(!Array.isArray(arr)) return { err: 'That read as JSON, but it is not a list of players.' };
+  const ids = [];
+  const seen = Object.create(null);
+  for(const v of arr){
+    const s = String(v == null ? '' : v).trim();
+    if(!s || s === 'null' || s === 'undefined' || seen[s]) continue;
+    seen[s] = 1; ids.push(s);
+  }
+  if(!ids.length) return { err: 'That list is empty, so nothing was changed.' };
+  let known = 0;
+  try { for(const i of ids) if(BY_ID.has(i)) known++; } catch(e){ known = ids.length; }
+  return { ids: ids, known: known };
+}
+function marksApply(ids){
+  HOT = new Set(ids);
+  saveHot();
+  if(S) paintList(counts()); else if(typeof render === 'function') render();
+}
+const _plural = n => n + (n === 1 ? ' player' : ' players');
+
+function marksExport(){
+  const text = JSON.stringify([...HOT]);
+  const p = _marksPanel(
+      '<h3>Export your red marks</h3>'
+    + '<p>' + _plural(HOT.size) + ' marked. Download the file into your <b>Watch 101</b> folder so it '
+    + 'syncs across, then hit <b>Marks: import</b> on the other machine and pick it. '
+    + 'If the download will not go, select the text below and copy it by hand.</p>'
+    + '<textarea id="markstext" readonly></textarea>'
+    + '<div class="markrow">'
+    +   '<button type="button" id="marksDl">Download the file</button>'
+    +   '<button type="button" id="marksCopy">Copy the text</button>'
+    +   '<span class="marksay" id="marksSay"></span>'
+    +   '<button type="button" id="marksShut" style="margin-left:auto">Close</button>'
+    + '</div>');
+  const ta = document.getElementById('markstext');
+  /* .value, not innerHTML. The ids are data and never markup. */
+  ta.value = text; ta.focus(); ta.select();
+  const say = function(msg, bad){
+    const s = document.getElementById('marksSay');
+    if(s){ s.textContent = msg; s.className = 'marksay' + (bad ? ' bad' : ''); }
+  };
+  document.getElementById('marksShut').onclick = p.close;
+  document.getElementById('marksDl').onclick = function(){
+    try{
+      const url = URL.createObjectURL(new Blob([text], { type:'application/json' }));
+      const a = _mk('a');
+      a.href = url; a.download = 'red_flags_' + _marksStamp() + '.json';
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){
+        try{ URL.revokeObjectURL(url); }catch(e){}
+        if(a.parentNode) a.parentNode.removeChild(a);
+      }, 0);
+      say('Sent to your downloads folder.');
+    }catch(e){ say('The browser refused the download. Copy the text instead.', true); }
+  };
+  document.getElementById('marksCopy').onclick = function(){
+    ta.focus(); ta.select();
+    let done = false;
+    try { done = document.execCommand('copy'); } catch(e){ done = false; }
+    say(done ? 'Copied.' : 'Copy was refused. Select the box and press Ctrl+C.', !done);
+  };
+}
+
+function marksImport(){
+  const p = _marksPanel(
+      '<h3>Import red marks</h3>'
+    + '<p>Pick the file you exported on the other machine, or paste the text in. '
+    + 'This <b>replaces</b> the marks in this browser, it does not add to them.</p>'
+    + '<textarea id="markstext" placeholder="paste the exported text here"></textarea>'
+    + '<div class="markrow">'
+    +   '<button type="button" id="marksPick">Choose a file…</button>'
+    +   '<button type="button" id="marksGo">Load these marks</button>'
+    +   '<span class="marksay" id="marksSay"></span>'
+    +   '<button type="button" id="marksShut" style="margin-left:auto">Close</button>'
+    + '</div>');
+  const ta = document.getElementById('markstext');
+  const say = function(msg, bad){
+    const s = document.getElementById('marksSay');
+    if(s){ s.textContent = msg; s.className = 'marksay' + (bad ? ' bad' : ''); }
+  };
+  document.getElementById('marksShut').onclick = p.close;
+  /* A file picker is a user gesture, so it reads a local file with none of the
+     restrictions that stop this page fetching one. This is why import is a picker
+     and not a path in a box. */
+  document.getElementById('marksPick').onclick = function(){
+    const inp = _mk('input');
+    inp.type = 'file'; inp.accept = '.json,application/json';
+    inp.addEventListener('change', function(){
+      const f = inp.files && inp.files[0];
+      if(!f) return;
+      const fr = new FileReader();
+      fr.onload  = function(){ ta.value = String(fr.result || ''); say('Read ' + f.name + '. Now hit Load.'); };
+      fr.onerror = function(){ say('Could not read that file.', true); };
+      fr.readAsText(f);
+    });
+    inp.click();
+  };
+  document.getElementById('marksGo').onclick = function(){
+    const res = marksParse(ta.value);
+    if(res.err){ say(res.err, true); return; }
+    const unknown = res.ids.length - res.known;
+    const msg = 'Replace ' + _plural(HOT.size) + ' marked here with ' + _plural(res.ids.length) + ' from that file?'
+              + (unknown ? '\n\n' + unknown + ' of them are not in this player pool and will be kept but never shown.' : '');
+    if(!confirm(msg)) { say('Left alone.'); return; }
+    marksApply(res.ids);
+    p.close();
+  };
+}
+
+/* 🪨 document.getElementById, NOT $. The $ helper is a `const` declared several
+   hundred lines BELOW this block, and reaching it from up here is a temporal dead
+   zone ReferenceError -- which throws at load and takes the ENTIRE cheat sheet
+   down, not just these two buttons. Caught before it ever shipped. Do not "tidy"
+   these two lines into $ without first moving the helper above them. */
+(function(){
+  const out = document.getElementById('marksOut');
+  const inn = document.getElementById('marksIn');
+  if(out) out.onclick = marksExport;
+  if(inn) inn.onclick = marksImport;
+})();
 
 /* ---------- REMOTE_PICK_V1 (2026-08-26) ----------
    One manager cannot get to the draft and will be on his phone. He owns pick 1 of
@@ -1285,10 +1533,35 @@ function paintList(C){
      clicks the header to Default. */
   const ORD = applySort(orderedPool(), gone);
   const q = ($('find').value || '').trim().toLowerCase();
+
+  /* LIVE_CAP_V1 (2026-08-26, his find). The caps below used to be a flat slice off the
+     top, and a DRAFTED man still ate one of the slots. So the list of players you could
+     actually pick SHRANK all night.
+
+     🪨 THE ARITHMETIC THAT MADE IT A BUG: a 10-team league with 17 spots takes 170 men.
+     If they all came out of the top 260, the ALL tab bottomed out at 90 live players in
+     the last round. The position tabs were far worse -- 60 shown, and with fifty-odd
+     receivers gone the WR tab could be a handful of live names behind a wall of
+     strikethrough. Round 12, hunting a sleeper, is exactly when that bites.
+
+     Now the cap counts the LIVE ones. Drafted players still appear, still struck through,
+     still showing who took them, because that record is half the reason he looks at the
+     sheet. They just no longer consume a slot. The list simply extends further down as
+     the draft goes on, so there are always TOP_N pickable men in front of him. */
+  function takeLive(list, n){
+    const out = [];
+    let live = 0;
+    for(const p of list){
+      out.push(p);
+      if(!gone.has(String(p.id)) && ++live >= n) break;
+    }
+    return out;
+  }
+
   let rows;
-  if(q)                    rows = ORD.filter(p => String(p.n).toLowerCase().indexOf(q) >= 0).slice(0, 40);
-  else if(filter !== 'ALL')rows = ORD.filter(p => norm(p.pos) === filter).slice(0, 60);
-  else                     rows = ORD.slice(0, TOP_N);
+  if(q)                    rows = takeLive(ORD.filter(p => String(p.n).toLowerCase().indexOf(q) >= 0), 40);
+  else if(filter !== 'ALL')rows = takeLive(ORD.filter(p => norm(p.pos) === filter), 60);
+  else                     rows = takeLive(ORD, TOP_N);
 
   // How many of THIS position are still on the board, and how many are left in
   // the tier the next available man sits in. The tier count is the number that
@@ -1337,7 +1610,9 @@ function paintList(C){
     out += '<div class="row' + (g ? ' gone' : '')
          + (!SHARED && g && g.t === meIdx ? ' mine' : '')
          + (!SHARED && !g && myHoles[ps] ? ' want' : '')
-         + (!SHARED && shifted ? ' moved' : '') + '"'
+         + (!SHARED && shifted ? ' moved' : '')
+         /* RED_FLAG_V1: his marks, his copy. The league's build never emits this. */
+         + (!SHARED && HOT.has(String(p.id)) ? ' hot' : '') + '"'
          + ' data-pid="' + esc(p.id) + '"'
          + (editing && !g ? ' draggable="true"' : '') + '>'
       + (editing ? '<span class="grip">&#8942;&#8942;</span>' : '')
@@ -1421,17 +1696,36 @@ $('meSel').onchange = e => {
 
 /* ---------- dragging ---------- */
 let dragId = null;
-/* REMOTE_PICK_V1: tapping a player arms him. It never sends on its own -- sending is
-   a second, deliberate tap on the green button. On a phone, one-tap-to-send would be a
-   mis-tap away from burning a pick on the wrong man. */
+/* ONE click on a player row, TWO meanings, decided by which build you are looking at.
+     league copy  -> REMOTE_PICK_V1, arm this man to send to Jay
+     his copy     -> RED_FLAG_V1, shade this man bright red
+
+   🪨 ONE LISTENER, NOT TWO, and this is worth keeping. The first version registered a
+   separate handler for each. Both would fire in a real browser, so it worked -- but two
+   handlers competing for one click is a thing a later edit gets wrong, and the order they
+   run in is invisible from either one. Branching once, in the open, cannot be misread. */
 $('list').addEventListener('click', e => {
-  if(!isRemoteMe() || !_mineNow) return;
   const r = e.target.closest('.row');
-  if(!r || r.classList.contains('gone')) return;
-  pendingPid = r.dataset.pid;
-  [...$('list').querySelectorAll('.picking')].forEach(x => x.classList.remove('picking'));
-  r.classList.add('picking');
-  paintUpNow(_mineNow, _curPick);
+  if(!r) return;
+
+  if(SHARED){
+    /* REMOTE_PICK_V1: tapping a player ARMS him. It never sends on its own -- sending is
+       a second, deliberate tap on the green button. On a phone, one-tap-to-send would be
+       a mis-tap away from burning a pick on the wrong man. */
+    if(!isRemoteMe() || !_mineNow) return;
+    if(r.classList.contains('gone')) return;
+    pendingPid = r.dataset.pid;
+    [...$('list').querySelectorAll('.picking')].forEach(x => x.classList.remove('picking'));
+    r.classList.add('picking');
+    paintUpNow(_mineNow, _curPick);
+    return;
+  }
+
+  /* RED_FLAG_V1, his copy. While Reorder is on, a click on a row is the tail end of a
+     drag -- flagging there would leave a red streak behind every player he moved. */
+  if(editing) return;
+  if(!r.dataset || !r.dataset.pid) return;
+  toggleHot(r.dataset.pid, r);
 });
 
 const list = $('list');
