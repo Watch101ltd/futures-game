@@ -482,6 +482,17 @@ body.view-board .right{display:none}
 #dbView .pDST{background:#c9cdd1}
 #dbView .pUNK{background:#9aa3ad}
 #dbView .dbnote{font-size:10.5px;color:var(--dim);margin-top:8px;line-height:1.45}
+/* The way IN, and it has to look like a control. BOARD_TAB_V1 first shipped this
+   as a plain button in the toolbar row. On HIS copy that row is full of buttons
+   so it read as one; on the LEAGUE's copy most of that row is stripped, so it
+   sat alone beside the search box and read as a heading. He looked straight at
+   it and did not see it. 🪨 A control is only obvious in the company it keeps.
+   It now lives in the top bar beside the team picker, where the eye already is. */
+.top #dbOpen{
+  font-weight:800;letter-spacing:.02em;padding:5px 14px;border-radius:20px;
+  background:var(--gold);color:#1a1005;border:1px solid var(--gold);cursor:pointer}
+.top #dbOpen:hover{filter:brightness(1.08)}
+.top #dbOpen.on{background:var(--panel2);color:var(--ink);border-color:var(--line)}
 /* ============== end BOARD_TAB_V1 ============== */
 </style>
 </head>
@@ -491,6 +502,10 @@ body.view-board .right{display:none}
   <div class="clock" id="clock">Waiting for the draft board…</div>
   <div class="until" id="until"></div>
   <select id="meSel" title="Which team is yours"></select>
+  <!-- BOARD_TAB_V1: the way in on a laptop, which has no view tabs. In the
+       top bar on purpose: on the league build the toolbar row below is mostly
+       stripped, so a button parked there reads as a heading. -->
+  <button id="dbOpen" title="Watch the live draft board">Draft board</button>
   <div class="link" id="link">not connected</div>
 </div>
 
@@ -517,8 +532,6 @@ body.view-board .right{display:none}
     </div>
     <div class="tabs" id="tabs"></div>
     <div class="tabs" style="border-bottom:2px solid var(--line)">
-      <!-- BOARD_TAB_V1: the laptop has no view tabs, so it needs its own way in -->
-      <button id="dbOpen" title="Watch the live draft board">Draft board</button>
       <button id="edit" title="Turn dragging on so you can move players up and down. Your order is saved.">Reorder: off</button>
       <input id="find" placeholder="find a player to move…">
       <button id="reset" title="Throw away your changes and go back to Berry's order">Reset to default</button>
@@ -2279,8 +2292,12 @@ try{ take(localStorage.getItem(LSKEY)); }catch(e){}
     if(v && v.parentNode) v.parentNode.removeChild(v);
     return;
   }
+  /* The top bar never hides, so this is a toggle rather than a one-way door. */
   if(open) open.addEventListener('click', function(){
-    if(typeof setView === 'function') setView('board');
+    var on = document.body.classList.contains('view-board');
+    if(typeof setView === 'function') setView(on ? 'players' : 'board');
+    open.classList.toggle('on', !on);
+    open.textContent = on ? 'Draft board' : 'Back to players';
   });
 })();
 </script>
